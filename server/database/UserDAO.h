@@ -1,0 +1,27 @@
+#pragma once
+#include <optional>
+#include <string>
+#include "../models/User.h"
+
+class UserDAO {
+public:
+    static std::optional<User> findByUsername(const std::string &username);
+    static std::optional<User> findById(int userId);
+    // createUser expects the password already hashed (sha256 hex)
+    static int createUser(const std::string &username, const std::string &passwordHash);
+    static bool updatePassword(int userId, const std::string &newPassword);
+    static bool removeSession(int userId); // placeholder to assist logout
+    static bool hasActiveSession(int userId);
+    static int createSession(int userId, const std::string &token);
+    static bool removeSessionByToken(const std::string &token);
+    // Session helpers
+    static int getUserIdByToken(const std::string &token); // returns 0 if not found
+
+    // Rate limiting methods
+    static bool incrementFailedLoginAttempts(int userId);
+    static bool resetFailedLoginAttempts(int userId);
+    static bool lockUser(int userId, int lockDurationSeconds);
+    static bool unlockUser(int userId);
+    static bool isUserLocked(int userId);
+    static int getFailedLoginAttempts(int userId);
+};
