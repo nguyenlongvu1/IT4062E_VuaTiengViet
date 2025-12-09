@@ -1,148 +1,125 @@
 #pragma once
-#include <string>
-#include <map>
+
 #include <iostream>
-#include <sstream>
+#include <string>
 #include <cstring>
 #include <unistd.h>
 #include <sys/socket.h>
 #include <arpa/inet.h>
-
-struct Message {
-    std::string command;
-    std::map<std::string, std::string> params;
-};
+#include <fcntl.h> // Để dùng fcntl set non-blocking
+#include <errno.h>
 
 class ClientSocket {
 private:
-    int sock;
-    std::string host;
-    int port;
+    int sock_fd;
+    std::string server_ip;
+    int server_port;
+    bool connected;
 
 public:
-    ClientSocket(const std::string& h = "127.0.0.1", int p = 8080)
-        : sock(-1), host(h), port(p) {}
+    ClientSocket() : sock_fd(-1), connected(false) {}
 
     ~ClientSocket() {
-        close_connection();
+        Close();
     }
 
-    bool connect() {
-        sock = socket(AF_INET, SOCK_STREAM, 0);
-        if (sock < 0) {
-            std::cerr << "Failed to create socket\n";
+    // Kết nối đến Server
+    bool Connect(const std::string& ip, int port) {
+        this->server_ip = ip;
+        this->server_port = port;
+
+        // 1. Tạo Socket TCP
+        sock_fd = socket(AF_INET, SOCK_STREAM, 0);
+        if (sock_fd < 0) {
+            std::cerr << "[ERR] Failed to create socket\n";
             return false;
         }
 
+        // 2. Cấu hình địa chỉ Server
         struct sockaddr_in server_addr;
+        memset(&server_addr, 0, sizeof(server_addr)); // Xóa sạch rác bộ nhớ
         server_addr.sin_family = AF_INET;
-        server_addr.sin_port = htons(port);
-        inet_pton(AF_INET, host.c_str(), &server_addr.sin_addr);
-
-        if (::connect(sock, (struct sockaddr*)&server_addr, sizeof(server_addr)) < 0) {
-            std::cerr << "Failed to connect to server at " << host << ":" << port << "\n";
-            return false;
-        }
-        return true;
-    }
-
-    void close_connection() {
-        if (sock >= 0) {
-            close(sock);
-            sock = -1;
-        }
-    }
-
-    bool send_message(const Message& msg) {
-        std::string data = build_message(msg);
-        if (send(sock, data.c_str(), data.size(), 0) < 0) {
-            std::cerr << "Failed to send message\n";
-            return false;
-        }
-        return true;
-    }
-
-    Message receive_message() {
-        char buffer[4096] = {0};
-        int n = recv(sock, buffer, sizeof(buffer) - 1, 0);
-        if (n < 0) {
-            std::cerr << "Failed to receive message\n";
-            return Message();
-        }
-        buffer[n] = '\0';
-        return parse_message(std::string(buffer));
-    }
-
-private:
-    std::string build_message(const Message& msg) {
-        std::string body;
-        bool first = true;
-        for (auto& kv : msg.params) {
-            if (!first) body += ";";
-            first = false;
-            body += kv.first + "=" + kv.second;
-        }
+        server_addr.sin_port = htons(port); // Host to Network Short
         
-        std::string result = "COMMAND: " + msg.command + "\n";
-        result += "LENGTH: " + std::to_string(body.size()) + "\n\n";
-        result += body;
-        return result;
+        // Chuyển đổi IP từ string sang binary
+        if (inet_pton(AF_INET, ip.c_str(), &server_addr.sin_addr) <= 0) {
+            std::cerr << "[ERR] Invalid address/ Address not supported\n";
+            return false;
+        }
+
+        // 3. Kết nối (Blocking connect - Chấp nhận chờ lúc đầu)
+        if (::connect(sock_fd, (struct sockaddr*)&server_addr, sizeof(server_addr)) < 0) {
+            std::cerr << "[ERR] Connection Failed\n";
+            return false;
+        }
+
+        // 4. QUAN TRỌNG: Chuyển Socket sang chế độ Non-blocking
+        // Để khi gọi recv() trong vòng lặp game, nó không làm treo màn hình
+        int flags = fcntl(sock_fd, F_GETFL, 0);
+        fcntl(sock_fd, F_SETFL, flags | O_NONBLOCK);
+
+        connected = true;
+        std::cout << "[INFO] Connected to " << ip << ":" << port << "\n";
+        return true;
     }
 
-    Message parse_message(const std::string& s) {
-        Message msg;
-        size_t pos = s.find("COMMAND:");
-        if (pos != std::string::npos) {
-            std::istringstream iss(s);
-            std::string line;
-            std::string body;
-            bool in_body = false;
-            
-            while (std::getline(iss, line)) {
-                if (line.empty()) {
-                    in_body = true;
-                    continue;
-                }
-                if (!in_body) {
-                    size_t colon = line.find(':');
-                    if (colon != std::string::npos) {
-                        std::string key = line.substr(0, colon);
-                        std::string value = line.substr(colon + 1);
-                        key.erase(0, key.find_first_not_of(" \t\n\r"));
-                        key.erase(key.find_last_not_of(" \t\n\r") + 1);
-                        value.erase(0, value.find_first_not_of(" \t\n\r"));
-                        value.erase(value.find_last_not_of(" \t\n\r") + 1);
-                        if (key == "COMMAND") msg.command = value;
-                    }
-                } else {
-                    if (!body.empty()) body += "\n";
-                    body += line;
-                }
-            }
-            
-            size_t start = 0;
-            while (start < body.size()) {
-                size_t semi = body.find(';', start);
-                std::string token = (semi == std::string::npos) ? body.substr(start) : body.substr(start, semi - start);
-                token.erase(0, token.find_first_not_of(" \t\n\r"));
-                token.erase(token.find_last_not_of(" \t\n\r") + 1);
-                
-                if (!token.empty()) {
-                    size_t eq = token.find('=');
-                    if (eq != std::string::npos) {
-                        std::string k = token.substr(0, eq);
-                        std::string v = token.substr(eq + 1);
-                        k.erase(0, k.find_first_not_of(" \t\n\r"));
-                        k.erase(k.find_last_not_of(" \t\n\r") + 1);
-                        v.erase(0, v.find_first_not_of(" \t\n\r"));
-                        v.erase(v.find_last_not_of(" \t\n\r") + 1);
-                        msg.params[k] = v;
-                    }
-                }
-                if (semi == std::string::npos) break;
-                start = semi + 1;
+    // Đóng kết nối
+    void Close() {
+        if (sock_fd >= 0) {
+            close(sock_fd);
+            sock_fd = -1;
+            connected = false;
+        }
+    }
+
+    // Gửi dữ liệu (Binary)
+    // Trả về true nếu gửi thành công
+    bool Send(const void* data, int len) {
+        if (!connected || sock_fd < 0) return false;
+
+        // Gửi toàn bộ dữ liệu (MSG_NOSIGNAL để tránh crash nếu server ngắt kết nối)
+        int sent = send(sock_fd, data, len, MSG_NOSIGNAL);
+        
+        if (sent < 0) {
+            std::cerr << "[ERR] Send failed: " << strerror(errno) << "\n";
+            connected = false; // Coi như mất kết nối
+            return false;
+        }
+        return true;
+    }
+
+    // Nhận dữ liệu (Non-blocking)
+    // Trả về: 
+    //  > 0: Số byte đọc được
+    //  = 0: Không có dữ liệu (EWOULDBLOCK/EAGAIN) hoặc Server đóng (xử lý kỹ sau)
+    //  -1: Lỗi
+    int Receive(void* buffer, int max_len) {
+        if (!connected || sock_fd < 0) return -1;
+
+        // MSG_DONTWAIT: Nếu không có dữ liệu, trả về ngay lập tức chứ không chờ
+        int bytes_read = recv(sock_fd, buffer, max_len, MSG_DONTWAIT);
+
+        if (bytes_read > 0) {
+            return bytes_read;
+        } 
+        else if (bytes_read == 0) {
+            // Server đóng kết nối
+            std::cout << "[INFO] Server closed connection\n";
+            Close();
+            return -1;
+        } 
+        else {
+            // bytes_read < 0
+            if (errno == EWOULDBLOCK || errno == EAGAIN) {
+                // Không có lỗi, chỉ là chưa có dữ liệu mới
+                return 0; 
+            } else {
+                std::cerr << "[ERR] Recv failed: " << strerror(errno) << "\n";
+                Close();
+                return -1;
             }
         }
-        return msg;
     }
+
+    bool IsConnected() const { return connected; }
 };
