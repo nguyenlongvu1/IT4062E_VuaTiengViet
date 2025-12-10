@@ -1,0 +1,38 @@
+QWidget {
+    background-color: #2c3e50;
+    color: white;
+    font-family: sans-serif;
+    font-size: 14px;
+}
+/* Style cho nút bấm chung */
+QPushButton {
+    background-color: #3498db;
+    border: 2px solid #2980b9;
+    border-radius: 6px;
+    padding: 8px 16px;
+    color: white;
+    font-weight: bold;
+}
+QPushButton:hover {
+    background-color: #5dade2;
+}
+/* Style riêng cho nút Rank (Màu Cam) - Cần setObjectName("btnRankMatch") */
+QPushButton#btnRankMatch {
+    background-color: #e67e22;
+    border-color: #d35400;
+    font-size: 16px;
+}
+/* Style riêng cho nút Friend (Màu Tím) - Cần setObjectName("btnFriendRoom") */
+QPushButton#btnFriendRoom {
+    background-color: #9b59b6;
+    border-color: #8e44ad;
+    font-size: 16px;
+}
+/* Style cho ô nhập liệu */
+QLineEdit {
+    background-color: #34495e;
+    border: 1px solid #95a5a6;
+    border-radius: 4px;
+    padding: 4px;
+    color: white;
+}
