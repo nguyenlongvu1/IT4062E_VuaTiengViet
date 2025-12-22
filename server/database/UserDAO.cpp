@@ -2,6 +2,7 @@
 #include "DB.h"
 #include <sqlite3.h>
 #include <iostream>
+#include <vector>
 
 std::optional<User> UserDAO::findByUsername(const std::string &username) {
     sqlite3 *db = DB::getHandle();
@@ -298,4 +299,55 @@ bool UserDAO::isUserLocked(int userId) {
     if (stmt) sqlite3_finalize(stmt);
     return isLocked;
 }
+std::vector<UserDAO::UserSearchInfo> UserDAO::searchUsers(const std::string &keyword) {
+    sqlite3 *db = DB::getHandle();
+    // Lưu ý: Cũng sửa kiểu dữ liệu của biến results
+    std::vector<UserDAO::UserSearchInfo> results; 
+    
+    if (!db) return results;
 
+    const char *sql = R"(
+        SELECT u.username, 
+               CASE WHEN s.token IS NOT NULL THEN 'Online' ELSE 'Offline' END as status
+        FROM Users u
+        LEFT JOIN Sessions s ON u.user_id = s.user_id
+        WHERE u.username LIKE ? 
+        LIMIT 20;
+    )";
+
+    sqlite3_stmt *stmt = nullptr;
+    if (sqlite3_prepare_v2(db, sql, -1, &stmt, nullptr) == SQLITE_OK) {
+        std::string likePattern = "%" + keyword + "%";
+        sqlite3_bind_text(stmt, 1, likePattern.c_str(), -1, SQLITE_TRANSIENT);
+
+        while (sqlite3_step(stmt) == SQLITE_ROW) {
+            UserDAO::UserSearchInfo info; // Thêm UserDAO:: cho chắc chắn
+            info.username = reinterpret_cast<const char*>(sqlite3_column_text(stmt, 0));
+            info.status = reinterpret_cast<const char*>(sqlite3_column_text(stmt, 1));
+            results.push_back(info);
+        }
+    } else {
+        std::cerr << "Search Error: " << sqlite3_errmsg(db) << std::endl;
+    }
+    
+    if (stmt) sqlite3_finalize(stmt);
+    return results;
+}
+void UserDAO::clearAllSessions() {
+    sqlite3 *db = DB::getHandle();
+    if (!db) return;
+    
+    char *errMsg = nullptr;
+    const char *sql = "DELETE FROM Sessions;"; // Xóa hết
+    
+    // Reset luôn trạng thái bảng Users (nếu bạn có lưu status trong bảng Users)
+    // const char *sql = "DELETE FROM Sessions; UPDATE Users SET status='Offline';"; 
+
+    int rc = sqlite3_exec(db, sql, 0, 0, &errMsg);
+    if (rc != SQLITE_OK) {
+        std::cerr << "SQL Error: " << errMsg << std::endl;
+        sqlite3_free(errMsg);
+    } else {
+        std::cout << "[DB] Da xoa sach Session cu." << std::endl;
+    }
+}

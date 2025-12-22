@@ -1,4 +1,5 @@
 #include "FriendDAO.h"
+#include "UserDAO.h"
 #include "DB.h"
 #include "UserDAO.h"
 #include <iostream>
@@ -85,4 +86,38 @@ bool FriendDAO::requestExists(int from_user_id, int to_user_id) {
                         "(user_id = " + std::to_string(to_user_id) + " AND friend_user_id = " + std::to_string(from_user_id) + ");";
     int count = DB::queryInt(query);
     return count > 0;
+}
+// FriendDAO.cpp
+
+std::vector<UserDAO::UserSearchInfo> FriendDAO::getFriends(int userId) {
+    std::vector<UserDAO::UserSearchInfo> friends;
+    sqlite3* db = DB::getHandle();
+    if (!db) return friends;
+
+    // u.user_id: Khóa chính của bảng Users
+    // f.user_id và f.friend_user_id: Các cột trong bảng Friends
+    // s.user_id: Cột trong bảng Sessions
+    // Thêm DISTINCT ngay sau SELECT
+std::string sql = 
+    "SELECT DISTINCT u.username, CASE WHEN s.status IS NOT NULL THEN 'Online' ELSE 'Offline' END as status "
+    "FROM Friends f "
+    "JOIN Users u ON (f.user_id = u.user_id OR f.friend_user_id = u.user_id) "
+    "LEFT JOIN Sessions s ON u.user_id = s.user_id "
+    "WHERE (f.user_id = " + std::to_string(userId) + " OR f.friend_user_id = " + std::to_string(userId) + ") "
+    "AND f.status = 'accepted' AND u.user_id != " + std::to_string(userId) + ";";
+    sqlite3_stmt* stmt;
+    if (sqlite3_prepare_v2(db, sql.c_str(), -1, &stmt, nullptr) == SQLITE_OK) {
+        while (sqlite3_step(stmt) == SQLITE_ROW) {
+            UserDAO::UserSearchInfo info;
+            info.username = reinterpret_cast<const char*>(sqlite3_column_text(stmt, 0));
+            info.status = reinterpret_cast<const char*>(sqlite3_column_text(stmt, 1));
+            friends.push_back(info);
+        }
+        sqlite3_finalize(stmt);
+    } else {
+        // In lỗi chi tiết để debug nếu vẫn hỏng
+        std::cerr << "[DB ERROR] getFriends failed: " << sqlite3_errmsg(db) << std::endl;
+    }
+
+    return friends;
 }

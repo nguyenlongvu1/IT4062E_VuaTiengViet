@@ -1,5 +1,16 @@
 <RCC>
     <qresource prefix="/">
         <file alias="style.qss">resources/styles/style.qss</file>
+        <file alias="bgLogin.png">resources/images/bgLogin.png</file>
+        <file alias="bgHome.png">resources/images/bgHome.png</file>
+        <file alias="friends.png">resources/images/friends.png</file>
+        <file alias="logout.png">resources/images/logout.png</file>
+        <file alias="findRank.png">resources/images/findRank.png</file>
+        <file alias="avatar_default.png">resources/images/avatar_default.png</file>
+        <file alias="radar.png">resources/images/radar.png</file>
+        <file alias="noti.png">resources/images/noti.png</file>
+        <file alias="search.png">resources/images/search.png</file>
+        <file alias="setting.png">resources/images/setting.png</file>
+        <file alias="history.png">resources/images/history.png</file>
     </qresource>
 </RCC>

@@ -2,9 +2,15 @@
 #include <optional>
 #include <string>
 #include "../models/User.h"
+#include <vector>
 
 class UserDAO {
+
 public:
+    struct UserSearchInfo {
+    std::string username;
+    std::string status; // "Online" hoặc "Offline"
+};
     static std::optional<User> findByUsername(const std::string &username);
     static std::optional<User> findById(int userId);
     // createUser expects the password already hashed (sha256 hex)
@@ -24,4 +30,6 @@ public:
     static bool unlockUser(int userId);
     static bool isUserLocked(int userId);
     static int getFailedLoginAttempts(int userId);
+    static std::vector<UserSearchInfo> searchUsers(const std::string &keyword);
+    static void clearAllSessions();
 };

@@ -1,30 +1,30 @@
 #include "MainWindow.h"
 #include "LoginWidget.h"
 #include "RegisterWidget.h"
+#include "HomeWidget.h"
 #include "GameClient.h"
 #include <QStackedWidget>
 #include <QLabel>
 #include <QMessageBox>
+#include "../ui/room/FriendRoomWidget.h"
 
 MainWindow::MainWindow(QWidget *parent)
     : QMainWindow(parent)
 {
-    this->resize(800, 600);
+    this->resize(1024, 768);
     m_stackedWidget = new QStackedWidget(this);
     setCentralWidget(m_stackedWidget);
 
     // 1. Khởi tạo các màn hình
     LoginWidget *loginScreen = new LoginWidget(this);
     RegisterWidget *registerScreen = new RegisterWidget(this);
+    HomeWidget *homeScreen = new HomeWidget(this);
     
-    // Tạm thời dùng Label làm màn hình Home (sẽ thay thế bằng HomeWidget sau)
-    QLabel *homePlaceholder = new QLabel("LOBBY SCREEN (Đang phát triển)", this);
-    homePlaceholder->setAlignment(Qt::AlignCenter);
 
     // 2. Thêm vào Stack (Thứ tự index: 0, 1, 2)
     m_stackedWidget->addWidget(loginScreen);    // Index 0
     m_stackedWidget->addWidget(registerScreen); // Index 1
-    m_stackedWidget->addWidget(homePlaceholder);// Index 2
+    m_stackedWidget->addWidget(homeScreen);// Index 2
 
     // 3. Xử lý điều hướng
     connect(loginScreen, &LoginWidget::switchToRegister, [=](){
@@ -35,8 +35,21 @@ MainWindow::MainWindow(QWidget *parent)
         m_stackedWidget->setCurrentIndex(0);
     });
 
-    connect(loginScreen, &LoginWidget::loginSuccess, [=](){
-        m_stackedWidget->setCurrentIndex(2); // Vào Lobby
+    connect(loginScreen, &LoginWidget::loginSuccess, [=](const QString &username, int score){
+        
+        // 1. Cập nhật thông tin vào màn hình Home TRƯỚC khi hiển thị
+        // (Tham số 0 là điểm số mặc định, sau này lấy từ server sau)
+        homeScreen->setPlayerInfo(username, score); 
+
+        // 2. Chuyển sang màn hình Home
+        m_stackedWidget->setCurrentWidget(homeScreen);
+        this->m_currentUsername = username;
+    });
+   
+    connect(homeScreen, &HomeWidget::logout, [=](){
+        GameClient::instance().sendLogout();
+        // Quay về màn hình Login
+        m_stackedWidget->setCurrentWidget(loginScreen);
     });
 
     // 4. Kết nối tới Server khi mở App
@@ -46,6 +59,8 @@ MainWindow::MainWindow(QWidget *parent)
     connect(&GameClient::instance(), &GameClient::disconnected, [=](){
        // Có thể hiện popup báo mất kết nối tại đây
     });
+
+    
 }
 
 MainWindow::~MainWindow() {}

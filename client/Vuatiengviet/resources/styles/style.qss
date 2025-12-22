@@ -1,38 +1,391 @@
+/* --- CÀI ĐẶT CHUNG --- */
 QWidget {
     background-color: #2c3e50;
     color: white;
-    font-family: sans-serif;
+    font-family: "Segoe UI", sans-serif;
     font-size: 14px;
 }
-/* Style cho nút bấm chung */
-QPushButton {
-    background-color: #3498db;
-    border: 2px solid #2980b9;
+#LoginScreen {
+    /* Dùng border-image để ảnh tự co giãn vừa khít màn hình */
+    border-image: url(:/bgLogin.png) 0 0 0 0 stretch stretch;
+}
+#RightOverlay {
+    /* Màu đen với độ trong suốt 40% (Overlay) */
+    /* Bạn có thể tăng 0.4 lên 0.6 nếu muốn tối hơn */
+    background-color: rgba(0, 0, 0, 0.4); 
+    
+    /* (Tùy chọn) Nếu muốn có hiệu ứng kính mờ (blur) cho nền bên phải */
+    /* Qt CSS chuẩn không hỗ trợ blur-background dễ dàng, 
+       nhưng màu tối là đủ để tạo hiệu ứng chiều sâu */
+}
+#registered_success{
+    background-color: red;
+
+}
+#LoginContainer {
+    /* Nền trắng đục 25% (tạo hiệu ứng kính) */
+    background-color: rgba(255, 255, 255, 25); 
+    
+    /* Viền trắng mờ để làm nổi bật khung */
+    border: 1px solid rgba(255, 255, 255, 80);
+    
+    /* Bo góc mềm mại */
+    border-radius: 20px;
+    
+    /* Kích thước cố định */
+    min-width: 550px;
+    max-width: 600px;
+    height: 700px;
+    min-height: 500px;
+}
+/* --- TIÊU ĐỀ --- */
+QLabel#lblTitle {
+    font-family: "Segoe UI", sans-serif;
+    font-size: 26px;
+    font-weight: 900; /* Extra Bold */
+    color: #f1c40f;   /* Màu vàng */
+    margin-bottom: 5px;
+    /* Hiệu ứng bóng chữ nhẹ giúp dễ đọc trên nền sáng */
+    qproperty-alignment: AlignCenter;
+    background-color: none;
+}
+/* --- Ô NHẬP LIỆU (Input) --- */
+QLineEdit {
+    background-color: #34495e; /* Màu xanh đen (tương tự ảnh mẫu) */
+    border: 1px solid rgba(255, 255, 255, 30);
     border-radius: 6px;
-    padding: 8px 16px;
+    padding: 12px;
+    color: white; /* Chữ màu trắng */
+    font-size: 14px;
+    selection-background-color: #e67e22;
+    max-width: 300px;
+    width: 300px;
+    
+}
+QLineEdit:focus {
+    background-color: #2c3e50; /* Đậm hơn khi focus */
+    border: 1px solid #3498db; /* Viền xanh dương khi gõ */
+}
+
+/* --- NÚT BẤM CHÍNH (Login/Register Submit) --- */
+/* Dùng ID #btnLogin cho cả nút Đăng nhập và nút Đăng ký Submit */
+QPushButton#btnLogin {
+    background-color: #2980b9; /* Xanh dương */
     color: white;
     font-weight: bold;
+    font-size: 15px;
+    border-radius: 6px;
+    padding: 12px;
+    border: none;
+    margin-top: 5px;
+    max-width: 300px;
+    width: 300px;
 }
-QPushButton:hover {
-    background-color: #5dade2;
+QPushButton#btnLogin:hover {
+    background-color: #3498db; /* Sáng hơn khi di chuột */
 }
-/* Style riêng cho nút Rank (Màu Cam) - Cần setObjectName("btnRankMatch") */
-QPushButton#btnRankMatch {
-    background-color: #e67e22;
-    border-color: #d35400;
-    font-size: 16px;
+QPushButton#btnLogin:pressed {
+    background-color: #1abc9c; /* Xanh ngọc khi nhấn */
+    padding-top: 14px; /* Hiệu ứng nhấn thụt xuống */
 }
-/* Style riêng cho nút Friend (Màu Tím) - Cần setObjectName("btnFriendRoom") */
-QPushButton#btnFriendRoom {
-    background-color: #9b59b6;
-    border-color: #8e44ad;
-    font-size: 16px;
+
+/* --- NÚT LINK (Quay lại / Chuyển màn hình) --- */
+QPushButton#btnLink {
+    background-color: transparent;
+    border: none;
+    color: #bdc3c7;
+    text-decoration: underline;
+    font-size: 13px;
+    /* Không giới hạn độ rộng để nó ôm sát chữ */
 }
-/* Style cho ô nhập liệu */
-QLineEdit {
-    background-color: #34495e;
-    border: 1px solid #95a5a6;
-    border-radius: 4px;
-    padding: 4px;
+QPushButton#btnLink:hover {
+    color: #ffffff;
+}
+/* --- Style cho Hộp Thông Báo (QMessageBox) --- */
+QMessageBox {
+    background-color: #2c3e50; /* Màu nền tối giống ô nhập liệu */
+    border: 1px solid #f1c40f; /* Viền vàng cho nổi bật */
+}
+
+/* Chữ trong thông báo */
+QMessageBox QLabel {
     color: white;
+    font-size: 14px;
+    font-weight: bold;
+    /* Font mặc định của hệ thống đôi khi xấu, set lại cho chắc */
+    font-family: "Segoe UI", sans-serif; 
+}
+
+/* Nút bấm trong thông báo (OK, Cancel...) */
+QMessageBox QPushButton {
+    background-color: #3498db; /* Màu xanh dương */
+    color: white;
+    border-radius: 5px;
+    padding: 6px 20px; /* Nút rộng ra chút cho đẹp */
+    font-weight: bold;
+    min-width: 60px;
+}
+
+QMessageBox QPushButton:hover {
+    background-color: #2980b9;
+}
+
+QMessageBox QPushButton:pressed {
+    background-color: #1abc9c;
+}
+
+
+/* --- MÀN HÌNH HOME --- */
+#HomeScreen {
+    border-image: url(:/bgHome.png) 0 0 0 0 stretch stretch;
+}
+
+/* 1. Profile Card (Góc Trái) */
+#ProfileFrame {
+    background-color: rgba(0, 0, 0, 0.6); /* Đen mờ */
+    border-radius: 8px;
+    border: 1px solid rgba(255, 255, 255, 0.1);
+}
+#AvatarLabel {
+    background-color: #34495e; /* Màu nền avatar */
+    color: white;
+    font-size: 24px;
+    font-weight: bold;
+    border-radius: 25px; /* Tròn vo */
+    border: 2px solid white;
+}
+#ProfileName {
+    color: white;
+    font-size: 16px;
+    font-weight: bold;
+    background-color: none;
+}
+#ProfileRank {
+    color: #f1c40f; /* Vàng */
+    font-size: 13px;
+    background-color: none;
+}
+
+/* Nút Logout (Góc phải) */
+#LogoutBtnIcon {
+    background-color: rgba(0, 0, 0, 0.5);
+    border-radius: 5px;
+    border: 1px solid rgba(255,255,255,0.2);
+    color: white;
+    font-weight: bold;
+    top: 0;
+}
+#LogoutBtnIcon:hover { background-color: rgba(231, 76, 60, 0.8); }
+
+/* Logo Chữ (Giả lập Logo) */
+#GameLogo {
+    font-family: "Segoe UI", sans-serif;
+    font-size: 40px;
+    font-weight: 900;
+    color: #e74c3c; /* Màu chữ chính */
+    /* Tạo viền chữ giả bằng bóng */
+    text-shadow: 2px 2px 0px #ffffff; 
+}
+
+/* 2. NÚT CHẾ ĐỘ CHƠI (VUÔNG TO) */
+QToolButton {
+    color: white;
+    font-weight: bold;
+    font-size: 18px;
+    border-radius: 10px;
+    border: none;
+    padding: 10px;
+}
+
+/* Nút Rank (Màu Cam) */
+#BtnMode_Rank {
+    background-color: #e67e22; /* Carrot Orange */
+    border-bottom: 8px solid #d35400; /* Hiệu ứng 3D đáy */
+    padding-top: 25px;
+    padding-bottom: 17px;
+}
+#BtnMode_Rank:hover {
+    background-color: #f39c12;
+    margin-top: 2px; /* Hiệu ứng nhấn */
+    border-bottom: 6px solid #d35400;
+}
+#BtnMode_Rank:pressed {
+    background-color: #d35400;
+    margin-top: 8px;
+    border-bottom: none;
+}
+
+/* Nút Friend (Màu Xanh Lá) */
+#BtnMode_Friend {
+    background-color: #2ecc71; /* Emerald Green */
+    border-bottom: 8px solid #27ae60;
+
+    padding-top: 35px;
+    padding-bottom: 0px;
+}
+#BtnMode_Friend:hover {
+    background-color: #4cd137;
+    margin-top: 2px;
+    border-bottom: 6px solid #27ae60;
+}
+#BtnMode_Friend:pressed {
+    background-color: #27ae60;
+    margin-top: 8px;
+    border-bottom: none;
+}
+
+/* 3. MENU DƯỚI (Nút nhỏ) */
+#BottomMenuBtn {
+    background-color: #34495e; /* Màu xanh đen tối */
+    border-radius: 5px;
+    font-size: 13px;
+    border-bottom: 5px solid #2c3e50;
+}
+#BottomMenuBtn:hover {
+    background-color: #1abc9c; /* Sáng lên màu xanh ngọc */
+    border-bottom: 5px solid #16a085;
+    margin-top: 2px;
+}
+
+/* =======================================================
+   MÀN HÌNH TÌM TRẬN (MATCHMAKING)
+   ======================================================= */
+#MatchmakingScreen {
+    background-color: #2c3e50;
+}
+
+#RadarLabel {
+    background-color: #34495e;
+    border-radius: 100px; /* Tròn */
+    border: 2px dashed #2ecc71;
+    color: #2ecc71;
+    font-weight: bold;
+}
+
+#MatchStatusLabel {
+    color: white;
+    font-size: 18px;
+    font-weight: bold;
+}
+
+#BtnCancelSearch {
+    background-color: #e74c3c;
+    color: white;
+    border-radius: 25px;
+    font-weight: bold;
+    font-size: 16px;
+    border: 2px solid #c0392b;
+}
+#BtnCancelSearch:hover {
+    background-color: #c0392b;
+}
+
+/* =======================================================
+   MÀN HÌNH PHÒNG BẠN BÈ (FRIEND ROOM)
+   ======================================================= */
+#FriendRoomScreen {
+    background-color: #2c3e50;
+}
+
+#RoomIDLabel {
+    color: #f1c40f;
+    font-size: 24px;
+    font-weight: bold;
+}
+
+/* --- Slot người chơi --- */
+#PlayerSlotFrame {
+    background-color: rgba(0,0,0,0.3);
+    border-radius: 15px;
+    border: 2px solid #7f8c8d;
+}
+
+/* Active: Khi có người chơi vào slot */
+#PlayerSlotFrame[active="true"] {
+    background-color: rgba(52, 152, 219, 0.2);
+    border: 2px solid #3498db;
+}
+
+#SlotAvatar {
+    background-color: #bdc3c7;
+    border-radius: 50px;
+    border: 2px solid transparent;
+}
+#SlotAvatar[active="true"] {
+    background-color: #3498db;
+    border: 2px solid white;
+}
+
+#SlotName {
+    color: white;
+    font-weight: bold;
+    font-size: 16px;
+}
+
+#SlotStatus {
+    color: #bdc3c7;
+    font-style: italic;
+    font-weight: normal;
+}
+/* Trạng thái Sẵn sàng */
+#SlotStatus[ready="true"] {
+    color: #2ecc71;
+    font-weight: bold;
+}
+#SlotStatus[ready="false"] {
+    color: #e74c3c;
+}
+
+/* --- Các nút trong phòng --- */
+#BtnRoomOption {
+    background-color: #3498db;
+    color: white;
+    border-radius: 10px;
+    font-weight: bold;
+    border: none;
+}
+#BtnRoomOption:hover {
+    background-color: #2980b9;
+}
+
+/* Nút Rời phòng (Màu đỏ) */
+#BtnRoomOption[action="leave"] {
+    background-color: #e74c3c;
+}
+#BtnRoomOption[action="leave"]:hover {
+    background-color: #c0392b;
+}
+
+/* Nút Sẵn sàng / Bắt đầu */
+#BtnRoomAction {
+    border-radius: 30px;
+    font-size: 20px;
+    font-weight: bold;
+    color: white;
+}
+/* Khách (Sẵn sàng - Xanh) */
+#BtnRoomAction[role="guest"] {
+    background-color: #2ecc71;
+}
+#BtnRoomAction[role="guest"]:hover {
+    background-color: #27ae60;
+}
+/* Chủ phòng (Bắt đầu - Cam) */
+#BtnRoomAction[role="host"] {
+    background-color: #e67e22;
+}
+#BtnRoomAction[role="host"]:hover {
+    background-color: #d35400;
+}
+/* Nút Hộp thư (Chuông) */
+#InboxBtn {
+    background-color: #f39c12; /* Màu cam nổi bật */
+    color: white;
+    font-size: 24px; /* Kích thước icon chuông */
+    border-radius: 25px; /* Tròn */
+    border: 2px solid rgba(255,255,255,0.2);
+}
+#InboxBtn:hover {
+    background-color: #d35400; /* Màu cam đậm khi di chuột */
+    border: 2px solid white;
 }

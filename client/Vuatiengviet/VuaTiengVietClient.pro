@@ -13,7 +13,8 @@ INCLUDEPATH += $$PWD/src \
                $$PWD/src/ui/lobby \
                $$PWD/src/ui/game \
                $$PWD/src/ui/components \
-               $$PWD/src/utils
+               $$PWD/src/utils\
+               $$PWD/src/ui/home
 
 # Định nghĩa các file Header
 HEADERS += \
@@ -21,7 +22,16 @@ HEADERS += \
     src/network/GameClient.h \
     src/network/Protocol.h \
     src/ui/auth/LoginWidget.h \
-    src/ui/auth/RegisterWidget.h
+    src/ui/auth/RegisterWidget.h \
+    src/ui/home/HomeWidget.h \
+    src/ui/home/LeaderboardWidget.h \
+    src/ui/home/SocialWidget.h \
+    src/ui/home/SettingsDialog.h \
+    src/ui/home/ProfileDialog.h \
+    src/ui/room/MatchmakingWidget.h \
+    src/ui/room/FriendRoomWidget.h \
+    src/ui/home/NotificationDialog.h
+    
 
 # Định nghĩa các file Source
 SOURCES += \
@@ -29,7 +39,15 @@ SOURCES += \
     src/core/MainWindow.cpp \
     src/network/GameClient.cpp \
     src/ui/auth/LoginWidget.cpp \
-    src/ui/auth/RegisterWidget.cpp
+    src/ui/auth/RegisterWidget.cpp \
+    src/ui/home/HomeWidget.cpp \
+    src/ui/home/LeaderboardWidget.cpp \
+    src/ui/home/SocialWidget.cpp \
+    src/ui/home/SettingsDialog.cpp \
+    src/ui/home/ProfileDialog.cpp \
+    src/ui/room/MatchmakingWidget.cpp \
+    src/ui/room/FriendRoomWidget.cpp \
+    src/ui/home/NotificationDialog.cpp
 
 # Tài nguyên (Nếu có file resources.qrc)
 # RESOURCES += resources.qrc

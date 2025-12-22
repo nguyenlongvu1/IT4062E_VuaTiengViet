@@ -55,6 +55,12 @@ Message Dispatcher::handleCommand(const Message& msg, ClientHandler*) {
     else if (msg.command == "REMATCH") {
         resp = RematchService::rematch(msg);
     }
+    else if (msg.command == "GET_ROOM_INFO") {
+        resp = RoomService::getRoomInfo(msg);
+    }
+    else if (msg.command == "FIND_MATCH") {
+        resp = MatchmakingService::findMatch(msg);
+    }
     else {
         resp.command = "ERR";
         resp.params["msg"] = "UnknownCommand";

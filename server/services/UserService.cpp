@@ -236,3 +236,12 @@ Message UserService::registerUser(const Message &msg) {
     resp.params["user_id"] = std::to_string(uid);
     return resp;
 }
+std::string UserService::getUsername(int userId) {
+   
+    auto userOpt = UserDAO::findById(userId);
+    
+    if (userOpt) {
+        return userOpt->username;
+    }
+    return "Unknown";
+}
