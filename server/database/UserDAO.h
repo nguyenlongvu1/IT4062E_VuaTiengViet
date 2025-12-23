@@ -11,6 +11,11 @@ public:
     std::string username;
     std::string status; // "Online" hoặc "Offline"
 };
+struct LeaderboardInfo {
+        std::string username;
+        int points;
+        std::string rankName;
+    };
     static std::optional<User> findByUsername(const std::string &username);
     static std::optional<User> findById(int userId);
     // createUser expects the password already hashed (sha256 hex)
@@ -32,4 +37,9 @@ public:
     static int getFailedLoginAttempts(int userId);
     static std::vector<UserSearchInfo> searchUsers(const std::string &keyword);
     static void clearAllSessions();
+    static bool addPoints(int userId, int points);
+    static std::string getRankName(int points);
+    static int getPoints(int userId);
+    static std::vector<LeaderboardInfo> getLeaderboard(int limit = 10);
+    
 };

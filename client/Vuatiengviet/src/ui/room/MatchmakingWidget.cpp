@@ -93,20 +93,18 @@ void MatchmakingWidget::cancelSearch() {
 }
 
 void MatchmakingWidget::onMatchFoundNetwork(const QString& roomId) {
-    if (handledMatchFound) return;   // ✅ CHẶN GỌI LẠI
+    if (handledMatchFound) return;
     handledMatchFound = true;
-    Q_UNUSED(roomId); // Fix warning "unused parameter"
-    
-    // 1. Cập nhật giao diện
+
     lblStatus->setText("ĐÃ TÌM THẤY ĐỐI THỦ!");
     lblStatus->setStyleSheet("color: #2ecc71; font-weight: bold; font-size: 20px;");
     statusTimer->stop();
-    
-    // 2. Chờ 1 giây rồi chuyển màn hình
-    QTimer::singleShot(5000, this, [=](){
-        emit matchFound(roomId); 
+
+    QTimer::singleShot(500, this, [=](){
+        emit matchFound(roomId);
     });
 }
+
 
 void MatchmakingWidget::updateStatusText() {
     dotCount = (dotCount + 1) % 4;

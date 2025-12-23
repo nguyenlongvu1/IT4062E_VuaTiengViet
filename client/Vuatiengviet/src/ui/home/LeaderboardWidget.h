@@ -3,12 +3,15 @@
 
 #include <QWidget>
 #include <QListWidget>
+#include "GameClient.h"
 
 class LeaderboardWidget : public QWidget {
     Q_OBJECT
 public:
     explicit LeaderboardWidget(QWidget *parent = nullptr);
     void updateData(); // Hàm để load dữ liệu giả lập hoặc thật
+public slots:
+    void updateLeaderboard(const QList<RankItem> &items);
 
 private:
     QListWidget *listRank;

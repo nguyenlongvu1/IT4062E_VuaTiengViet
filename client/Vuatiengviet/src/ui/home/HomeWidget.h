@@ -20,7 +20,7 @@ public:
     explicit HomeWidget(QWidget *parent = nullptr);
     
     // Hàm cập nhật thông tin người chơi (gọi sau khi Login thành công)
-    void setPlayerInfo(const QString& name, int score);
+    void setPlayerInfo(const QString& name, int score, const QString& rankName);
 
 protected:
     // Vẽ hình nền cầu vồng
@@ -61,6 +61,8 @@ private:
     NotificationDialog *m_notifyDialog = nullptr;
     void joinRankedRoom(const QString& roomId);
     bool m_isProcessingMatch = false;
+    QDialog* m_radarDialog = nullptr; // Khai báo để quản lý cửa sổ tìm trận
+    void switchToGameScreen(QString matchId, QString roomId); // Hàm placeholder
 };
 
 #endif // HOMEWIDGET_H

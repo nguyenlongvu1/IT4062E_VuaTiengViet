@@ -12,6 +12,11 @@ struct UserSearchResult {
     QString status; // "Online", "Offline", "InGame"
     bool isFriend;  // true = Đã kết bạn, false = Chưa
 };
+struct RankItem {
+    QString name;
+    int score;
+    QString rank;
+};
 // ----------------------------------------------
 
 class GameClient : public QObject {
@@ -45,6 +50,9 @@ public:
     void sendFindMatch();
     void sendCancelMatch();
 
+    void sendGetLeaderboardRequest();
+
+    void sendStartGame(int roomId);
   
 
 signals:
@@ -72,6 +80,10 @@ signals:
     void roomInfoReceived(const QString &p1, const QString &p2, const QString &p3);
     
     void matchFound(const QString& roomId);
+    void matchStartedDirectly(QString matchId, QString roomId);
+    void userInfoReceived(const QString& username, int points, const QString& rankName);
+    void leaderboardReceived(const QList<RankItem> &items);
+    
     
 
 private slots:

@@ -10,6 +10,7 @@ public:
     static Message createRoom(const Message& msg);
     static Message joinRoom(const Message& msg);
     static Message getRoomInfo(const Message& msg);
+    static Message leaveRoom(const Message& msg);
     static std::vector<int> getPlayers(int roomId);
     static int getPlayerCount(int roomId);
     static int leaveRoom(int userId);

@@ -4,4 +4,5 @@
 class MatchmakingService {
 public:
     static Message findMatch(const Message& msg);
+    static Message cancelMatch(const Message& msg);
 };

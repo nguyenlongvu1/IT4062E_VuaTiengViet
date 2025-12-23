@@ -1,16 +1,30 @@
 #include "LeaderboardWidget.h"
+#include "GameClient.h"
 #include <QVBoxLayout>
 #include <QLabel>
 #include <QListWidgetItem>
+#include <QTimer>
 
 LeaderboardWidget::LeaderboardWidget(QWidget *parent) : QWidget(parent) {
     setupUi();
-    updateData(); // Load thử dữ liệu
+
+    // 1. Kết nối với GameClient để nhận dữ liệu
+    connect(&GameClient::instance(), &GameClient::leaderboardReceived, 
+            this, &LeaderboardWidget::updateLeaderboard);
+
+    // 2. Gửi yêu cầu lấy dữ liệu ngay khi khởi tạo
+    // Dùng QTimer::singleShot để đảm bảo an toàn luồng khi khởi tạo UI
+    QTimer::singleShot(500, [=](){
+        GameClient::instance().sendGetLeaderboardRequest();
+    });
 }
 
 void LeaderboardWidget::setupUi() {
     QVBoxLayout *layout = new QVBoxLayout(this);
     layout->setContentsMargins(0, 0, 0, 0);
+    // Thay setFixedWidth bằng setMinimumWidth
+    this->setMinimumWidth(350);
+    this->setMaximumWidth(600);
 
     // Tiêu đề
     QLabel *lblTitle = new QLabel("🏆 BẢNG XẾP HẠNG", this);
@@ -29,31 +43,34 @@ void LeaderboardWidget::setupUi() {
     layout->addWidget(listRank);
 }
 
-void LeaderboardWidget::updateData() {
+// Hàm này được gọi khi Server trả về dữ liệu
+void LeaderboardWidget::updateLeaderboard(const QList<RankItem> &items) {
     listRank->clear();
-    // Dữ liệu giả lập (Sau này lấy từ Server)
-    struct RankItem { QString name; int score; QString rank; };
-    QList<RankItem> data = {
-        {"VuaTiengViet_VIP", 2500, "Đế Vương"},
-        {"NguyenVanA", 1800, "Bậc Thầy"},
-        {"TranThiB", 1500, "Thánh Chém"},
-        {"LeVanC", 1200, "Thủ Khoa"},
-        {"MeoMeo", 800, "Đủ Đậu"}
-    };
 
-    for(int i=0; i<data.size(); i++) {
-        QString text = QString("#%1  %2\n      %3 (%4 điểm)")
-                       .arg(i+1)
-                       .arg(data[i].name)
-                       .arg(data[i].rank)
-                       .arg(data[i].score);
+    for(int i=0; i<items.size(); i++) {
+        const RankItem &data = items[i];
+
+        QString text = QString("%1.  %2\n      %3 (%4 điểm)")
+                        .arg(i+1)
+                        .arg(data.name)
+                        .arg(data.rank)
+                        .arg(data.score);
+        
         QListWidgetItem *item = new QListWidgetItem(text);
         
         // Tô màu top 3
-        if (i == 0) item->setForeground(QColor("#f1c40f")); // Vàng
+        if (i == 0) {
+            item->setForeground(QColor("#f1c40f")); // Vàng
+            item->setIcon(QIcon(":/rank1.png"));    // Nếu có icon
+        }
         else if (i == 1) item->setForeground(QColor("#bdc3c7")); // Bạc
         else if (i == 2) item->setForeground(QColor("#e67e22")); // Đồng
         
+        // Font chữ
+        QFont font = item->font();
+        if(i < 3) font.setBold(true);
+        item->setFont(font);
+
         listRank->addItem(item);
     }
 }

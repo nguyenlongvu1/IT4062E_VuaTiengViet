@@ -351,3 +351,112 @@ void UserDAO::clearAllSessions() {
         std::cout << "[DB] Da xoa sach Session cu." << std::endl;
     }
 }
+// =========================================================
+// HÀM 1: CỘNG ĐIỂM (UPDATE total_points)
+// =========================================================
+bool UserDAO::addPoints(int userId, int points) {
+    sqlite3* db = DB::getHandle();
+    
+    // Cộng điểm trực tiếp vào DB
+    std::string sql = "UPDATE Users SET total_points = total_points + ? WHERE user_id = ?;";
+    
+    sqlite3_stmt* stmt;
+    if (sqlite3_prepare_v2(db, sql.c_str(), -1, &stmt, nullptr) != SQLITE_OK) {
+        return false;
+    }
+
+    sqlite3_bind_int(stmt, 1, points);
+    sqlite3_bind_int(stmt, 2, userId);
+
+    bool success = (sqlite3_step(stmt) == SQLITE_DONE);
+    sqlite3_finalize(stmt);
+    
+    // Log để kiểm tra
+    if (success) {
+        std::cout << "[UserDAO] Added " << points << " points for User ID " << userId << "\n";
+    }
+    return success;
+}
+
+// =========================================================
+// HÀM 2: LẤY TÊN RANK (Tra cứu bảng Ranks)
+// =========================================================
+std::string UserDAO::getRankName(int points) {
+    sqlite3* db = DB::getHandle();
+    
+    // Logic: Tìm Rank mà điểm này nằm giữa min và max
+    // Ví dụ: 150 điểm -> nằm giữa 101 và 200 -> "Biết chữ sương sương"
+    std::string sql = "SELECT rank_name FROM Ranks WHERE ? >= min_point AND ? <= max_point LIMIT 1;";
+    
+    sqlite3_stmt* stmt;
+    if (sqlite3_prepare_v2(db, sql.c_str(), -1, &stmt, nullptr) != SQLITE_OK) {
+        return "Không xác định"; 
+    }
+
+    sqlite3_bind_int(stmt, 1, points);
+    sqlite3_bind_int(stmt, 2, points);
+
+    std::string rankName = "Mù chữ"; // Giá trị mặc định nếu không tìm thấy
+    
+    if (sqlite3_step(stmt) == SQLITE_ROW) {
+        const char* text = (const char*)sqlite3_column_text(stmt, 0);
+        if (text) {
+            rankName = std::string(text);
+        }
+    }
+    
+    sqlite3_finalize(stmt);
+    return rankName;
+}
+
+// =========================================================
+// HÀM 3: LẤY ĐIỂM HIỆN TẠI
+// =========================================================
+int UserDAO::getPoints(int userId) {
+    sqlite3* db = DB::getHandle();
+    std::string sql = "SELECT total_points FROM Users WHERE user_id = ?;";
+    
+    sqlite3_stmt* stmt;
+    if (sqlite3_prepare_v2(db, sql.c_str(), -1, &stmt, nullptr) != SQLITE_OK) return 0;
+
+    sqlite3_bind_int(stmt, 1, userId);
+    
+    int points = 0;
+    if (sqlite3_step(stmt) == SQLITE_ROW) {
+        points = sqlite3_column_int(stmt, 0);
+    }
+    sqlite3_finalize(stmt);
+    return points;
+}
+std::vector<UserDAO::LeaderboardInfo> UserDAO::getLeaderboard(int limit) {
+    std::vector<UserDAO::LeaderboardInfo> list;
+    sqlite3* db = DB::getHandle();
+    
+    // Câu lệnh SQL lấy Top user giảm dần theo điểm
+    std::string sql = "SELECT username, total_points FROM Users ORDER BY total_points DESC LIMIT ?;";
+    
+    sqlite3_stmt* stmt;
+    if (sqlite3_prepare_v2(db, sql.c_str(), -1, &stmt, nullptr) != SQLITE_OK) {
+        return list; // Trả về list rỗng nếu lỗi
+    }
+
+    sqlite3_bind_int(stmt, 1, limit);
+
+    while (sqlite3_step(stmt) == SQLITE_ROW) {
+        UserDAO::LeaderboardInfo info; // Khai báo biến info
+        
+        // Cột 0: username
+        const unsigned char* nameText = sqlite3_column_text(stmt, 0);
+        info.username = nameText ? std::string(reinterpret_cast<const char*>(nameText)) : "";
+        
+        // Cột 1: total_points
+        info.points = sqlite3_column_int(stmt, 1);
+        
+        // Tính Rank Name
+        info.rankName = getRankName(info.points);
+        
+        list.push_back(info);
+    }
+    sqlite3_finalize(stmt);
+    return list;
+}

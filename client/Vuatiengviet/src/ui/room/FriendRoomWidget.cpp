@@ -161,6 +161,15 @@ void FriendRoomWidget::setupUi() {
     connect(btnLeave, &QPushButton::clicked, this, &FriendRoomWidget::onLeaveBtnClicked);
     // connect(btnAction, &QPushButton::clicked, this, &FriendRoomWidget::startGame);
     connect(btnJoinRoom, &QPushButton::clicked, this, &FriendRoomWidget::onJoinRoomClicked);
+    connect(btnAction, &QPushButton::clicked, this, [=](){
+        QString text = lblRoomID->text(); 
+        int roomId = text.split(":").last().trimmed().toInt();
+        if (roomId > 0) {
+            GameClient::instance().sendStartGame(roomId);
+        } else {
+            QMessageBox::warning(this, "Lỗi", "Không tìm thấy ID phòng hợp lệ!");
+        }
+    });
 }
 
 // Hàm cập nhật ID phòng lên Header

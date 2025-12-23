@@ -32,6 +32,7 @@ Message MatchService::createMatchFromRoom(const Message &msg) {
         ss << players[i];
     }
     resp.params["players"] = ss.str();
+    resp.params["room_id"] = std::to_string(roomId);
     resp.params["broadcast"] = "true";
     return resp;
 }

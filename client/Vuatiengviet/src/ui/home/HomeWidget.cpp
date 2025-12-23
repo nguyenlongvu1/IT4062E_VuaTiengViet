@@ -124,7 +124,7 @@ void HomeWidget::setupUi() {
 
     // --- CỘT TRÁI: BXH ---
     leaderboardWidget = new LeaderboardWidget(this);
-    leaderboardWidget->setFixedWidth(250); 
+    // leaderboardWidget->setFixedWidth(250); 
 
     // --- CỘT GIỮA: LOGO & NÚT CHƠI ---
     QVBoxLayout *centerContainer = new QVBoxLayout();
@@ -171,7 +171,7 @@ void HomeWidget::setupUi() {
 
     // --- CỘT PHẢI: BẠN BÈ ---
     socialWidget = new SocialWidget(this);
-    socialWidget->setFixedWidth(250);
+    socialWidget->setFixedWidth(350);
 
     // ADD 3 CỘT VÀO MID LAYOUT
     midLayout->addWidget(leaderboardWidget);      // Trái
@@ -215,29 +215,17 @@ connect(&GameClient::instance(), &GameClient::pendingListReceived, [=](const QSt
         btnInbox->setStyleSheet("background-color: #e74c3c; border-radius: 25px;");
     }
 });
+connect(&GameClient::instance(), &GameClient::userInfoReceived, 
+            this, &HomeWidget::setPlayerInfo);
+
 // Kết nối tín hiệu nhận thông tin phòng với hàm cập nhật giao diện
 
 }
 
-
-QString HomeWidget::getRankName(int score) {
-    // Dựa theo ảnh Database bạn gửi:
-    if (score <= 100)  return "Mù chữ";
-    if (score <= 200)  return "Biết chữ sương sương";
-    if (score <= 500)  return "Ngôn từ cấp 1";
-    if (score <= 800)  return "Đủ đậu cấp 3";
-    if (score <= 1200) return "Thủ khoa khối D";
-    if (score <= 1600) return "Thánh Chém gió";
-    if (score <= 2000) return "Bậc Thầy Văn Phong";
-    
-    // Từ 2001 trở lên (Max 2 tỷ)
-    return "Đế Vương Ngôn Ngữ";
-}
-
-void HomeWidget::setPlayerInfo(const QString& name, int score) {
+void HomeWidget::setPlayerInfo(const QString& name, int score, const QString& rankName) {
     m_currentUsername = name;
     m_currentScore = score;
-    m_currentRankName = getRankName(score);
+    m_currentRankName = rankName;
     m_notifyDialog = new NotificationDialog(this);
     m_notifyDialog->hide();
     // 1. Cập nhật Tên
@@ -249,7 +237,7 @@ void HomeWidget::setPlayerInfo(const QString& name, int score) {
     }
     
     // 3. Tính tên Rank từ điểm số
-    QString rankName = getRankName(score);
+    // QString rankName = getRankName(score);
 
     // 4. Hiển thị ra Label
     // Ví dụ: Rank: Thủ khoa khối D (950 điểm)
@@ -267,27 +255,54 @@ void HomeWidget::openHistory() {
 // src/ui/home/HomeWidget.cpp
 
 void HomeWidget::joinRankedRoom(const QString& roomId) {
-    QDialog dlg(this);
-    dlg.setFixedSize(1280, 720);
-    QVBoxLayout *layout = new QVBoxLayout(&dlg);
-    layout->setContentsMargins(0,0,0,0);
+    Q_UNUSED(roomId);
 
-    FriendRoomWidget *roomWidget = new FriendRoomWidget(m_currentUsername, true, &dlg);
-    layout->addWidget(roomWidget);
+    // 1. Kiểm tra dọn dẹp để tránh chồng chéo
+    QList<FriendRoomWidget*> oldWidgets = this->findChildren<FriendRoomWidget*>();
+    for (auto old : oldWidgets) { old->deleteLater(); }
 
-    // 1. Gán RoomID ngay lập tức để hết chữ "Đang tạo phòng"
-    roomWidget->setRoomID(roomId);
+    QString myName = GameClient::instance().getCurrentUserID();
 
-    // 2. Kết nối Signal cập nhật 3 người
+    // 2. Tạo Widget phòng chơi
+    // Đặt parent là nullptr để nó là một cửa sổ độc lập, không bị phụ thuộc vào Home
+    FriendRoomWidget *roomWidget = new FriendRoomWidget(myName, true, nullptr); 
+    
+    // 3. Thiết lập thuộc tính hiển thị
+    roomWidget->setAttribute(Qt::WA_DeleteOnClose);
+    roomWidget->setMinimumSize(1280, 720); // Kích thước chuẩn
+
+    // 4. Kết nối quay lại màn hình Home khi thoát phòng
+    connect(roomWidget, &FriendRoomWidget::leftRoom, this, [this, roomWidget](){
+        this->show();           // Hiện lại Home
+        roomWidget->close();    // Đóng phòng
+    });
+
+    // 5. Cập nhật thông tin người chơi
     connect(&GameClient::instance(), &GameClient::roomInfoReceived, 
-            roomWidget, &FriendRoomWidget::updateMembers);
+            roomWidget, &FriendRoomWidget::updateMembers, Qt::UniqueConnection);
 
-    // 3. QUAN TRỌNG: Gửi yêu cầu lấy dữ liệu TRƯỚC khi gọi exec()
-    // GameClient::instance().sendGetRoomInfo(); 
+    // 6. THỨ TỰ HIỂN THỊ QUAN TRỌNG:
+    roomWidget->show();         // Hiện phòng trước
+    roomWidget->raise();        // Đưa lên lớp trên cùng
+    roomWidget->activateWindow(); // Tập trung chuột/phím vào đây
+    
+    this->hide();               // Sau đó mới ẩn màn hình Home (để tránh màn hình đen)
 
-    // 4. Cuối cùng mới thực thi Dialog
-    dlg.exec(); 
+    // 7. Lấy dữ liệu
+    GameClient::instance().sendGetRoomInfo(); 
+    // Trong HomeWidget.cpp, đoạn xử lý khi nhấn tìm trận
+connect(&GameClient::instance(), &GameClient::matchStartedDirectly, 
+        this, [this](QString matchId, QString roomId) {
+    
+    // 1. Đóng Dialog Radar tìm kiếm (nếu đang mở)
+    if (m_radarDialog) m_radarDialog->accept();
+
+    // 2. Khởi tạo Widget Game và chuyển màn hình
+    // Dữ liệu lúc này đã được lưu vào DB (Match, MatchPlayers, MatchQuestions)
+    this->switchToGameScreen(matchId, roomId);
+});
 }
+
 void HomeWidget::playWithFriend() {
     QDialog *dlg = new QDialog(this);
     dlg->setWindowTitle("Phòng Chờ");
@@ -342,25 +357,37 @@ void HomeWidget::openInbox() {
         m_notifyDialog->activateWindow();
     }
 }
+// Trong HomeWidget.cpp
+// Trong HomeWidget.cpp sửa lại hàm playRanked
 void HomeWidget::playRanked() {
-    QDialog dlg(this);
-    dlg.setFixedSize(500, 500);
-    QVBoxLayout *layout = new QVBoxLayout(&dlg);
-    MatchmakingWidget *matchWidget = new MatchmakingWidget(&dlg);
+    m_radarDialog = new QDialog(this);
+    m_radarDialog->setWindowTitle("Đang tìm đối thủ...");
+    m_radarDialog->setFixedSize(400, 500);
+    
+    QVBoxLayout *layout = new QVBoxLayout(m_radarDialog);
+    
+    // SỬA: Thay vì dùng QLabel trống, hãy dùng MatchmakingWidget bạn đã viết
+    MatchmakingWidget *matchWidget = new MatchmakingWidget(m_radarDialog);
     layout->addWidget(matchWidget);
 
-    QString foundRoomId = "";
-
-    connect(matchWidget, &MatchmakingWidget::matchFound, [&dlg, &foundRoomId](QString roomId){
-        foundRoomId = roomId;
-        dlg.accept(); // Đóng Dialog Radar trước
+    // Kết nối Signal: Khi Server gửi START_MATCH về
+    connect(&GameClient::instance(), &GameClient::matchStartedDirectly, 
+            this, [this](QString matchId, QString roomId) {
+        if (m_radarDialog) m_radarDialog->accept();
+        this->switchToGameScreen(matchId, roomId); 
     });
 
-    matchWidget->startSearching();
+    // Kích hoạt gửi lệnh FIND_MATCH lên Server
+    matchWidget->startSearching(); 
 
-    // CHỈ KHI DIALOG RADAR ĐÃ ĐÓNG THẬT SỰ
-    if (dlg.exec() == QDialog::Accepted) {
-        // Gọi hàm chuyển màn hình
-        this->joinRankedRoom(foundRoomId);
-    }
+    m_radarDialog->exec();
+}
+
+// Hàm này để bạn test xem DB đã lưu chưa
+void HomeWidget::switchToGameScreen(QString matchId, QString roomId) {
+    // Vì chưa có màn hình Game, chúng ta hiện thông báo để xác nhận MatchID từ DB
+    QMessageBox::information(this, "Ghép trận thành công", 
+        QString("Đã lưu vào DB!\nMatch ID: %1\nRoom ID: %2\n\nHệ thống đã bốc sẵn 30 câu hỏi.").arg(matchId).arg(roomId));
+    
+    qDebug() << "[TEST] San sang vao Game voi MatchID: " << matchId;
 }

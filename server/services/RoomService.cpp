@@ -3,6 +3,8 @@
 #include <mutex>
 #include "../services/UserService.h"
 #include <algorithm>
+#include "../database/MatchDAO.h"
+#include "../core/Server.h"
 
 // static int NEXT_ROOM_ID = 1;
 static std::map<int, Room> roomTable;
@@ -91,13 +93,14 @@ Message RoomService::joinRoom(const Message& msg) {
     {
         std::lock_guard<std::mutex> lock(room_mutex);
 
-        // 2. AUTO-LEAVE: Dọn dẹp phòng cũ
+        // 2. AUTO-LEAVE: Dọn dẹp phòng cũ (Giữ nguyên logic của bạn)
         for (auto& pair : roomTable) {
             Room& r = pair.second;
             auto it = std::find(r.players.begin(), r.players.end(), userId);
             if (it != r.players.end()) {
                 r.players.erase(it);
                 std::cout << "[INFO] User " << userId << " auto-left Room " << pair.first << "\n";
+                // Lưu ý: Nếu muốn báo cho phòng cũ biết user này đã thoát, cũng cần code thêm ở đây
             }
         }
 
@@ -117,12 +120,30 @@ Message RoomService::joinRoom(const Message& msg) {
             return resp;
         }
 
-        // 5. THỰC HIỆN THÊM NGƯỜI (Logic quan trọng)
+        // 5. THỰC HIỆN THÊM NGƯỜI
         room.players.push_back(userId);
         std::cout << "[INFO] User " << userId << " joined Room " << roomId << " (Count: " << room.players.size() << ")\n";
 
-        // 6. CẬP NHẬT KẾT QUẢ TRẢ VỀ (BẮT BUỘC PHẢI CÓ ĐOẠN NÀY)
-        resp.params["status"] = "success"; // <--- ĐÂY LÀ DÒNG BẠN ĐANG THIẾU HOẶC ĐẶT SAI CHỖ
+        // =================================================================
+        // [PHẦN MỚI THÊM] THÔNG BÁO CHO NGƯỜI KHÁC TRONG PHÒNG
+        // =================================================================
+        Server* srv = Server::getInstance();
+        if (srv) {
+            // Tạo gói tin thông báo
+            std::string notifyMsg = "COMMAND: PLAYER_JOINED_NOTIFY\n\nroom_id=" + std::to_string(roomId);
+            
+            // Duyệt danh sách người chơi trong phòng
+            for (int pid : room.players) {
+                // Chỉ gửi cho người khác (Không gửi cho chính người vừa vào)
+                if (pid != userId) {
+                    srv->sendToUser(pid, notifyMsg);
+                }
+            }
+        }
+        // =================================================================
+
+        // 6. CẬP NHẬT KẾT QUẢ TRẢ VỀ (Cho người gọi)
+        resp.params["status"] = "success";
         resp.params["room_id"] = std::to_string(roomId);
         resp.params["count"] = std::to_string(room.players.size());
     }
@@ -236,6 +257,48 @@ int RoomService::leaveRoom(int userId) {
 
     return -1; // Không tìm thấy user này ở phòng nào
 }
+Message RoomService::leaveRoom(const Message& msg) {
+    Message resp;
+    resp.command = "LEAVE_ROOM_RES";
+
+    if (msg.params.count("user_id") == 0) {
+        resp.params["status"] = "fail";
+        resp.params["msg"] = "Missing user_id";
+        return resp;
+    }
+
+    int userId = std::stoi(msg.params.at("user_id"));
+
+    // 1. Gọi hàm logic để xóa user khỏi danh sách & check xóa phòng
+    int roomId = leaveRoom(userId);
+
+    if (roomId != -1) {
+        resp.params["status"] = "success";
+        resp.params["room_id"] = std::to_string(roomId); 
+
+        // 2. [FIX MỚI] THÔNG BÁO CHO NGƯỜI CÒN LẠI
+        Server* srv = Server::getInstance();
+        if (srv) {
+            std::lock_guard<std::mutex> lock(room_mutex); // Khóa để đọc roomTable an toàn
+            
+            // Kiểm tra xem phòng còn tồn tại không (nếu người cuối cùng rời thì phòng đã bị xóa ở step 1)
+            if (roomTable.find(roomId) != roomTable.end()) {
+                Room& room = roomTable[roomId];
+                std::string notifyMsg = "COMMAND: PLAYER_LEFT_NOTIFY\n\nroom_id=" + std::to_string(roomId);
+                
+                // Gửi cho tất cả những người còn lại
+                for (int pid : room.players) {
+                    srv->sendToUser(pid, notifyMsg);
+                }
+            }
+        }
+    } else {
+        resp.params["status"] = "fail"; 
+        resp.params["reason"] = "User not in any room";
+    }
+
+    return resp;
+}
 // --- [MỚI] TRIỂN KHAI CÁC HÀM MATCHMAKING ---
 
 void RoomService::addToQueue(int userId) {
@@ -261,32 +324,34 @@ void RoomService::removeFromQueue(int userId) {
 RoomService::MatchResult RoomService::processMatchmaking() {
     std::lock_guard<std::mutex> lock(room_mutex);
     
-    // 1. Kiểm tra đủ 3 người mới thực hiện ghép
+    // 1. Kiểm tra đủ 3 người
     if (matchmakingQueue.size() < 3) {
         return { -1, -1, -1, -1, false }; 
     }
 
-    // 2. Lấy 3 người ra khỏi hàng đợi
+    // 2. Lấy 3 người chơi ra khỏi hàng đợi
     int p1 = matchmakingQueue.front(); matchmakingQueue.pop_front();
     int p2 = matchmakingQueue.front(); matchmakingQueue.pop_front();
     int p3 = matchmakingQueue.front(); matchmakingQueue.pop_front();
 
-    // 3. TẠO ID NGẪU NHIÊN 6 CHỮ SỐ
+    // 3. Tạo RoomID ngẫu nhiên (6 chữ số)
     int randomRoomId = 100000 + (std::rand() % 900000);
 
-    // 4. LƯU VÀO DATABASE (Bảng Rooms)
-    // Việc lưu vào DB giúp ID ngẫu nhiên này trở thành "ID thật" để tra cứu sau này
-    DatabaseManager::instance().execute(
-        "INSERT INTO Rooms (room_id, host_id, status) VALUES (?, ?, 'matching')",
-        { std::to_string(randomRoomId), std::to_string(p1) }
-    );
+    // 4. SỬ DỤNG MatchDAO ĐỂ KHỞI TẠO TRẬN ĐẤU TRONG DB
+    // Hàm này sẽ tự động INSERT vào bảng Match, MatchPlayers (3 người) và MatchQuestions (30 câu)
+    std::vector<int> players = {p1, p2, p3};
+    int matchId = MatchDAO::createMatch(randomRoomId, players);
 
-    // 5. Cập nhật bộ nhớ đệm (roomTable) để các hàm khác (getRoomInfo) tìm thấy ngay
-    Room room;
-    room.roomId = randomRoomId;
-    room.players = {p1, p2, p3};
-    roomTable[randomRoomId] = room;
+    if (matchId > 0) {
+        // 5. Lưu vào bộ nhớ tạm để xử lý nhanh các yêu cầu sau đó
+        Room room;
+        room.roomId = randomRoomId;
+        room.players = players;
+        roomTable[randomRoomId] = room;
 
-    std::cout << "[DB Matchmaking] Created Room " << randomRoomId << " for 3 players.\n";
-    return { randomRoomId, p1, p2, p3, true }; 
+        std::cout << "[Matchmaking] Created Match " << matchId << " for Room " << randomRoomId << "\n";
+        return { randomRoomId, p1, p2, p3, true };
+    }
+
+    return { -1, -1, -1, -1, false };
 }

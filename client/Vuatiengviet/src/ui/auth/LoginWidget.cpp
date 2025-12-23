@@ -89,8 +89,7 @@ LoginWidget::LoginWidget(QWidget *parent) : QWidget(parent) {
     connect(&GameClient::instance(), &GameClient::loginSuccess, [=](){
         // QMessageBox::information(this, "Thông báo", "Đăng nhập thành công!");
         QString user = txtUser->text();
-        int fakeScore = 1250; // Mốc này phải ra "Thánh Chém gió"
-        emit loginSuccess(user, fakeScore);
+        emit loginSuccess();
     });
 
     connect(&GameClient::instance(), &GameClient::loginFailed, [=](QString msg, QString code){ // Nhớ thêm tham số code

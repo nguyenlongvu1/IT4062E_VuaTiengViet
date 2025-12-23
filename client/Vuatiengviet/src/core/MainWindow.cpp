@@ -35,15 +35,8 @@ MainWindow::MainWindow(QWidget *parent)
         m_stackedWidget->setCurrentIndex(0);
     });
 
-    connect(loginScreen, &LoginWidget::loginSuccess, [=](const QString &username, int score){
-        
-        // 1. Cập nhật thông tin vào màn hình Home TRƯỚC khi hiển thị
-        // (Tham số 0 là điểm số mặc định, sau này lấy từ server sau)
-        homeScreen->setPlayerInfo(username, score); 
-
-        // 2. Chuyển sang màn hình Home
+    connect(loginScreen, &LoginWidget::loginSuccess, [=](){
         m_stackedWidget->setCurrentWidget(homeScreen);
-        this->m_currentUsername = username;
     });
    
     connect(homeScreen, &HomeWidget::logout, [=](){

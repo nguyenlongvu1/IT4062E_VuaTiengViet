@@ -22,7 +22,7 @@ protected:
     }
 signals:
     void switchToRegister(); // Chuyển sang màn đăng ký
-    void loginSuccess(const QString &username, int score); // Chuyển sang màn Home
+    void loginSuccess(); // Chuyển sang màn Home
 
 private:
     QFrame *loginContainer;
