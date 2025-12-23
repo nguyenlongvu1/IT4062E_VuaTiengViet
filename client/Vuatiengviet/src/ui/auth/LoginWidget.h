@@ -4,7 +4,7 @@
 #include <QPaintEvent>
 #include <QStyleOption>
 #include <QPainter>
-class QLineEdit; // Forward declaration giúp biên dịch nhanh hơn
+class QLineEdit; 
 class QPushButton;
 class QLabel;
 class QFrame;
@@ -13,7 +13,6 @@ class LoginWidget : public QWidget {
 public:
     explicit LoginWidget(QWidget *parent = nullptr);
 protected:
-    // Hàm này bắt buộc phải có để hiện hình nền trên Widget tự tạo
     void paintEvent(QPaintEvent *) override {
         QStyleOption opt;
         opt.initFrom(this);
@@ -21,8 +20,8 @@ protected:
         style()->drawPrimitive(QStyle::PE_Widget, &opt, &p, this);
     }
 signals:
-    void switchToRegister(); // Chuyển sang màn đăng ký
-    void loginSuccess(); // Chuyển sang màn Home
+    void switchToRegister();
+    void loginSuccess();    
 
 private:
     QFrame *loginContainer;

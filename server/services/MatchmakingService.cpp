@@ -4,7 +4,7 @@
 #include <mutex>
 #include <sstream>
 #include <iostream>
-#include <algorithm> // Để dùng std::find nếu cần, nhưng queue thì phải loop thủ công
+#include <algorithm> 
 
 static std::queue<int> queuePlayers;
 static std::mutex queue_mutex;
@@ -22,8 +22,6 @@ Message MatchmakingService::findMatch(const Message& msg) {
     std::lock_guard<std::mutex> lock(queue_mutex);
 
     // 1. Kiểm tra xem user đã có trong hàng chờ chưa để tránh duplicate
-    // (Vì std::queue không duyệt được, ta tạm chấp nhận rủi ro hoặc dùng deque. 
-    // Nhưng ở đây ta cứ push vào, logic ghép sẽ xử lý sau).
     queuePlayers.push(userId);
     std::cout << "[MATCHMAKING] User " << userId << " joined queue. Queue size: " << queuePlayers.size() << std::endl;
 
@@ -62,9 +60,8 @@ Message MatchmakingService::findMatch(const Message& msg) {
     return resp;
 }
 
-// =========================================================
-// [MỚI] HÀM HỦY TÌM TRẬN (Để khớp với Dispatcher)
-// =========================================================
+
+//HÀM HỦY TÌM TRẬN (Để khớp với Dispatcher)
 Message MatchmakingService::cancelMatch(const Message& msg) {
     Message resp;
     resp.command = "CANCEL_MATCH_RES";
@@ -75,9 +72,7 @@ Message MatchmakingService::cancelMatch(const Message& msg) {
     int userId = std::stoi(msg.params.at("user_id"));
 
     std::lock_guard<std::mutex> lock(queue_mutex);
-    
-    // std::queue không hỗ trợ xóa phần tử ở giữa.
-    // Giải thuật: Tạo 1 queue tạm, chuyển tất cả sang queue tạm TRỪ người muốn hủy.
+
     std::queue<int> tempQueue;
     bool found = false;
 
@@ -86,14 +81,12 @@ Message MatchmakingService::cancelMatch(const Message& msg) {
         queuePlayers.pop();
 
         if (id == userId) {
-            found = true; // Bỏ qua, không push vào temp -> Coi như đã xóa
+            found = true; 
             std::cout << "[MATCHMAKING] User " << userId << " removed from queue.\n";
         } else {
             tempQueue.push(id);
         }
     }
-
-    // Gán ngược lại
     queuePlayers = tempQueue;
 
     if (found) {

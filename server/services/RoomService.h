@@ -25,6 +25,5 @@ public:
     static void removeFromQueue(int userId);
     static MatchResult processMatchmaking();
 private:
-    // Biến lưu hàng đợi (User ID)
     static std::deque<int> matchmakingQueue;
 };

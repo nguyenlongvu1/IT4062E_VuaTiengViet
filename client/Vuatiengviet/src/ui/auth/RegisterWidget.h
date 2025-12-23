@@ -13,7 +13,6 @@ class RegisterWidget : public QWidget {
 public:
     explicit RegisterWidget(QWidget *parent = nullptr);
 protected:
-    // Hàm này bắt buộc phải có để hiện hình nền trên Widget tự tạo
     void paintEvent(QPaintEvent *) override {
         QStyleOption opt;
         opt.initFrom(this);

@@ -321,7 +321,7 @@ std::vector<UserDAO::UserSearchInfo> UserDAO::searchUsers(const std::string &key
         sqlite3_bind_text(stmt, 1, likePattern.c_str(), -1, SQLITE_TRANSIENT);
 
         while (sqlite3_step(stmt) == SQLITE_ROW) {
-            UserDAO::UserSearchInfo info; // Thêm UserDAO:: cho chắc chắn
+            UserDAO::UserSearchInfo info;
             info.username = reinterpret_cast<const char*>(sqlite3_column_text(stmt, 0));
             info.status = reinterpret_cast<const char*>(sqlite3_column_text(stmt, 1));
             results.push_back(info);
@@ -339,9 +339,6 @@ void UserDAO::clearAllSessions() {
     
     char *errMsg = nullptr;
     const char *sql = "DELETE FROM Sessions;"; // Xóa hết
-    
-    // Reset luôn trạng thái bảng Users (nếu bạn có lưu status trong bảng Users)
-    // const char *sql = "DELETE FROM Sessions; UPDATE Users SET status='Offline';"; 
 
     int rc = sqlite3_exec(db, sql, 0, 0, &errMsg);
     if (rc != SQLITE_OK) {
@@ -351,13 +348,10 @@ void UserDAO::clearAllSessions() {
         std::cout << "[DB] Da xoa sach Session cu." << std::endl;
     }
 }
-// =========================================================
-// HÀM 1: CỘNG ĐIỂM (UPDATE total_points)
-// =========================================================
+// UPDATE total_points
 bool UserDAO::addPoints(int userId, int points) {
     sqlite3* db = DB::getHandle();
     
-    // Cộng điểm trực tiếp vào DB
     std::string sql = "UPDATE Users SET total_points = total_points + ? WHERE user_id = ?;";
     
     sqlite3_stmt* stmt;
@@ -371,21 +365,15 @@ bool UserDAO::addPoints(int userId, int points) {
     bool success = (sqlite3_step(stmt) == SQLITE_DONE);
     sqlite3_finalize(stmt);
     
-    // Log để kiểm tra
     if (success) {
         std::cout << "[UserDAO] Added " << points << " points for User ID " << userId << "\n";
     }
     return success;
 }
 
-// =========================================================
-// HÀM 2: LẤY TÊN RANK (Tra cứu bảng Ranks)
-// =========================================================
+// LẤY TÊN RANK (Tra cứu bảng Ranks)
 std::string UserDAO::getRankName(int points) {
     sqlite3* db = DB::getHandle();
-    
-    // Logic: Tìm Rank mà điểm này nằm giữa min và max
-    // Ví dụ: 150 điểm -> nằm giữa 101 và 200 -> "Biết chữ sương sương"
     std::string sql = "SELECT rank_name FROM Ranks WHERE ? >= min_point AND ? <= max_point LIMIT 1;";
     
     sqlite3_stmt* stmt;
@@ -396,7 +384,7 @@ std::string UserDAO::getRankName(int points) {
     sqlite3_bind_int(stmt, 1, points);
     sqlite3_bind_int(stmt, 2, points);
 
-    std::string rankName = "Mù chữ"; // Giá trị mặc định nếu không tìm thấy
+    std::string rankName = "Mù chữ";
     
     if (sqlite3_step(stmt) == SQLITE_ROW) {
         const char* text = (const char*)sqlite3_column_text(stmt, 0);
@@ -409,9 +397,8 @@ std::string UserDAO::getRankName(int points) {
     return rankName;
 }
 
-// =========================================================
-// HÀM 3: LẤY ĐIỂM HIỆN TẠI
-// =========================================================
+
+// LẤY ĐIỂM HIỆN TẠI
 int UserDAO::getPoints(int userId) {
     sqlite3* db = DB::getHandle();
     std::string sql = "SELECT total_points FROM Users WHERE user_id = ?;";
@@ -431,19 +418,18 @@ int UserDAO::getPoints(int userId) {
 std::vector<UserDAO::LeaderboardInfo> UserDAO::getLeaderboard(int limit) {
     std::vector<UserDAO::LeaderboardInfo> list;
     sqlite3* db = DB::getHandle();
-    
-    // Câu lệnh SQL lấy Top user giảm dần theo điểm
+
     std::string sql = "SELECT username, total_points FROM Users ORDER BY total_points DESC LIMIT ?;";
     
     sqlite3_stmt* stmt;
     if (sqlite3_prepare_v2(db, sql.c_str(), -1, &stmt, nullptr) != SQLITE_OK) {
-        return list; // Trả về list rỗng nếu lỗi
+        return list; 
     }
 
     sqlite3_bind_int(stmt, 1, limit);
 
     while (sqlite3_step(stmt) == SQLITE_ROW) {
-        UserDAO::LeaderboardInfo info; // Khai báo biến info
+        UserDAO::LeaderboardInfo info; 
         
         // Cột 0: username
         const unsigned char* nameText = sqlite3_column_text(stmt, 0);

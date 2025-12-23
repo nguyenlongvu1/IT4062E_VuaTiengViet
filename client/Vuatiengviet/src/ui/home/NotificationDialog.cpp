@@ -11,7 +11,6 @@ NotificationDialog::NotificationDialog(QWidget *parent) : QDialog(parent) {
     setStyleSheet("QDialog { background-color: #2c3e50; color: white; }"
                   "QListWidget { background: transparent; border: none; outline: none; }");
     setupUi();
-    // loadFakeData(); // XÓA: Không load giả nữa
 }
 
 void NotificationDialog::setupUi() {
@@ -34,26 +33,22 @@ void NotificationDialog::setupUi() {
     connect(btnClose, &QPushButton::clicked, this, &NotificationDialog::hide); // Sửa close -> hide để không bị hủy
 }
 
-// [LOGIC MỚI] Hàm thêm lời mời thật
 void NotificationDialog::addFriendRequest(const QString &senderName) {
-    // 1. KIỂM TRA TRÙNG LẶP (QUAN TRỌNG)
+    // KIỂM TRA TRÙNG LẶP
     // Duyệt qua danh sách hiện tại, nếu thấy tên này rồi thì thôi, không thêm nữa
     for(int i = 0; i < listNoti->count(); ++i) {
         QListWidgetItem* existingItem = listNoti->item(i);
         // Lấy widget con gắn vào item để check tên (hoặc lưu tên vào UserRole)
         // Cách đơn giản nhất: Lưu senderName vào UserRole lúc tạo item
         if (existingItem->data(Qt::UserRole).toString() == senderName) {
-            return; // Đã có rồi -> Thoát luôn
+            return; 
         }
     }
 
-    // 2. NẾU CHƯA CÓ THÌ TẠO MỚI (Code cũ của bạn)
     QListWidgetItem *listWItem = new QListWidgetItem(listNoti);
     listWItem->setSizeHint(QSize(listNoti->width() - 30, 90));
     
-    // --- LƯU TÊN VÀO DATA ĐỂ CHECK TRÙNG LẦN SAU ---
     listWItem->setData(Qt::UserRole, senderName); 
-    // -----------------------------------------------
 
     QWidget *wid = new QWidget();
     wid->setStyleSheet("background-color: rgba(0,0,0,0.3); border-radius: 8px; margin-bottom: 5px;");
@@ -81,7 +76,6 @@ void NotificationDialog::addFriendRequest(const QString &senderName) {
 
     listNoti->setItemWidget(listWItem, wid);
 
-    // --- LOGIC NÚT BẤM ---
     connect(btnAccept, &QPushButton::clicked, [=](){
         btnAccept->setText("Đang xử lý...");
         btnAccept->setEnabled(false);

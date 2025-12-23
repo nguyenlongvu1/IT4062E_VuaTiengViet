@@ -9,7 +9,7 @@ class LeaderboardWidget : public QWidget {
     Q_OBJECT
 public:
     explicit LeaderboardWidget(QWidget *parent = nullptr);
-    void updateData(); // Hàm để load dữ liệu giả lập hoặc thật
+    void updateData(); 
 public slots:
     void updateLeaderboard(const QList<RankItem> &items);
 
@@ -18,4 +18,4 @@ private:
     void setupUi();
 };
 
-#endif // LEADERBOARDWIDGET_H
+#endif 

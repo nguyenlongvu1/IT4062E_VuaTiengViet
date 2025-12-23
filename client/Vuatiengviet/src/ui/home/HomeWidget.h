@@ -23,7 +23,6 @@ public:
     void setPlayerInfo(const QString& name, int score, const QString& rankName);
 
 protected:
-    // Vẽ hình nền cầu vồng
     void paintEvent(QPaintEvent *) override {
         QStyleOption opt;
         opt.initFrom(this);
@@ -33,7 +32,7 @@ protected:
 
 signals:
     void logout();       // Signal đăng xuất
-     // Signal tạo phòng
+ 
 
 private:
     QString getRankNameFromScore(int score);
@@ -49,7 +48,7 @@ private:
     void openSettings();
     void openHistory();
     void setupUi();
-     void playRanked();    // Signal tìm trận
+     void playRanked();    
     void playWithFriend(); 
     void openInbox();
     QString getRankName(int score);

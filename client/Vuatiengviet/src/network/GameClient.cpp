@@ -51,9 +51,7 @@ void GameClient::sendLogout() {
     m_currentUserID.clear();
 }
 
-// =========================================================================
-// HÀM XỬ LÝ DỮ LIỆU NHẬN TỪ SERVER (QUAN TRỌNG - ĐÃ SỬA DÍNH GÓI TIN)
-// =========================================================================
+// XỬ LÝ DỮ LIỆU NHẬN TỪ SERVER (QUAN TRỌNG - ĐÃ SỬA DÍNH GÓI TIN)
 void GameClient::onReadyRead() {
     QByteArray data = m_socket->readAll();
     QString rawData = QString::fromUtf8(data);
@@ -61,14 +59,12 @@ void GameClient::onReadyRead() {
     qDebug() << "[CLIENT DEBUG] Raw Data received:" << rawData;
 
     // 1. Tách các gói tin dựa trên từ khóa "COMMAND: "
-    // Lý do: Server có thể gửi "FRIEND_LIST..." dính liền với "ROOM_CREATED..."
     QStringList packets = rawData.split("COMMAND: ", Qt::SkipEmptyParts);
 
     for (const QString &packet : packets) {
-        // Khôi phục lại tiền tố "COMMAND: " để logic bên dưới hoạt động bình thường
         QString response = "COMMAND: " + packet;
         
-        // 2. Tách Payload (Chỉ cho gói tin hiện tại trong vòng lặp)
+        // 2. Tách Payload 
         QString payload = "";
         int splitIndex = response.indexOf("\n\n");
         if (splitIndex != -1) payload = response.mid(splitIndex + 2);
@@ -83,29 +79,24 @@ void GameClient::onReadyRead() {
             return payload.mid(start + search.length(), end - (start + search.length())).trimmed();
         };
 
-        // =========================================================
-        // BẮT ĐẦU XỬ LÝ CÁC LOGIC (COPY ĐẦY ĐỦ TỪ CODE CŨ)
-        // =========================================================
-
         // --- CASE 1: ĐĂNG NHẬP / ĐĂNG KÝ ---
         if (response.contains(CMD_LOGIN_OK)) {
            m_currentUserID = getPayloadValue("user_id");
     
-            // 2. [MỚI] Lấy thông tin hiển thị (Rank, Điểm, Tên) từ Server
+            // Lấy thông tin hiển thị (Rank, Điểm, Tên) 
             QString username = getPayloadValue("username");
-            QString rankName = getPayloadValue("rank_name"); // Server đã tính toán (VD: Thánh Chém Gió)
+            QString rankName = getPayloadValue("rank_name"); 
             int points = getPayloadValue("points").toInt();
 
             qDebug() << "[INFO] Logged in:" << username << "| Rank:" << rankName << "| Points:" << points;
 
-            // 3. [MỚI] Phát tín hiệu gửi dữ liệu sang HomeWidget
-            // Signal này sẽ kích hoạt hàm setPlayerInfo bên HomeWidget
+            // Phát tín hiệu gửi dữ liệu sang HomeWidget
             emit userInfoReceived(username, points, rankName);
 
-            // 4. Báo đăng nhập thành công để chuyển màn hình
+            // Báo đăng nhập thành công 
             emit loginSuccess();
 
-            // 5. Tự động lấy danh sách bạn bè
+            // lấy danh sách bạn bè
             sendGetFriendList();
             sendGetPendingRequests();
         } 
@@ -125,12 +116,10 @@ void GameClient::onReadyRead() {
     
     // Lấy toàn bộ chuỗi: "u1,On|u2,Off|u3,On"
     QString listStr = getPayloadValue("users"); 
-    
-    // [FIX] Cắt theo dấu gạch đứng "|"
     QStringList users = listStr.split("|", Qt::SkipEmptyParts);
     
     for (const QString& uStr : users) {
-        QStringList parts = uStr.split(","); // Vẫn dùng dấu phẩy cho từng user
+        QStringList parts = uStr.split(",");
         if (parts.size() >= 2) {
             UserSearchResult item;
             item.username = parts[0].trimmed();
@@ -164,20 +153,16 @@ void GameClient::onReadyRead() {
 else if (response.contains("COMMAND: FRIEND_LIST_RES")) {
     QList<UserSearchResult> friends;
     
-    // BƯỚC 1: Lấy chính xác chuỗi dữ liệu từ key "friends" hoặc "players"
-    // Hàm getPayloadValue sẽ tự động loại bỏ phần "friends=" đi
+    // Lấy chính xác chuỗi dữ liệu từ key "friends" hoặc "players"
     QString listStr = getPayloadValue("friends");
-    
-    // Fallback: Nếu server gửi key là "players" (do code cũ) thì lấy "players"
     if (listStr.isEmpty()) {
         listStr = getPayloadValue("players");
     }
 
-    // BƯỚC 2: Tách chuỗi clean (ví dụ: "tuphan,Online;nam,Offline")
+    // Tách chuỗi clean (ví dụ: "tuphan,Online;nam,Offline")
     QStringList entries = listStr.split("|", Qt::SkipEmptyParts);
     
     for (const QString& entry : entries) {
-        // Mỗi entry lúc này sẽ là "tuphan,Online" (không còn friends= nữa)
         QStringList parts = entry.split(",");
         
         if (parts.size() >= 2) {
@@ -209,22 +194,17 @@ else if (response.contains("COMMAND: FRIEND_LIST_RES")) {
 
         // --- CASE 6: XỬ LÝ PHÒNG (ROOM) ---
 
-        // 6.0. NHẬN THÔNG TIN CHI TIẾT PHÒNG (Mới thêm)
-        // Server trả về: COMMAND: ROOM_INFO_RES ... host=Tuan;guest=Nam
-       // Tìm đến đoạn CASE 6 trong GameClient::onReadyRead
+        // NHẬN THÔNG TIN CHI TIẾT PHÒNG 
         else if (response.contains("COMMAND: ROOM_INFO_RES")) {
-            // Server sẽ gửi p1, p2, p3 dựa trên danh sách trong MatchPlayers hoặc Rooms
-            QString p1 = getPayloadValue("p1"); // Luôn là Host
-            QString p2 = getPayloadValue("p2"); // Guest 1
-            QString p3 = getPayloadValue("p3"); // Guest 2
+            QString p1 = getPayloadValue("p1"); //host
+            QString p2 = getPayloadValue("p2"); 
+            QString p3 = getPayloadValue("p3"); 
             
             qDebug() << "[NET] Room Data from DB: P1=" << p1 << " P2=" << p2 << " P3=" << p3;
-            
-            // Phát tín hiệu để FriendRoomWidget ghi đè dữ liệu thật lên các Slot
             emit roomInfoReceived(p1, p2, p3);
         }
 
-        // 6.1. Tham gia phòng (JOIN_ROOM_RES) -> Là Khách (Guest)
+        // Tham gia phòng (JOIN_ROOM_RES) -> Là Khách (Guest)
         else if (response.contains("COMMAND: JOIN_ROOM_RES")) {
             QString status = getPayloadValue("status");
             if (status == "success") {
@@ -233,8 +213,6 @@ else if (response.contains("COMMAND: FRIEND_LIST_RES")) {
                 QString rId = getPayloadValue("room_id");
                 if (!rId.isEmpty()) {
                     emit roomJoined(rId); 
-                    
-                    // QUAN TRỌNG: Vừa vào phòng xong, hỏi ngay xem chủ phòng là ai
                     sendGetRoomInfo(); 
                 }
             } else {
@@ -242,30 +220,25 @@ else if (response.contains("COMMAND: FRIEND_LIST_RES")) {
             }
         }
 
-        // 6.2. Tạo phòng thành công (ROOM_CREATED) -> Là Chủ phòng (Host)
+        // Tạo phòng thành công (ROOM_CREATED) -> Là Chủ phòng (Host)
         else if (response.contains("COMMAND: ROOM_CREATED")) {
             QString roomId = getPayloadValue("room_id");
             emit roomJoined(roomId); 
             
-            // QUAN TRỌNG: Hỏi lại server để tự cập nhật tên mình vào Slot 1
             sendGetRoomInfo();
         }
 
-        // 6.3. Có người vào phòng (PLAYER_JOINED_NOTIFY) -> Host nhận tin này
+        // Có người vào phòng (PLAYER_JOINED_NOTIFY) -> Host nhận tin này
         else if (response.contains("COMMAND: PLAYER_JOINED_NOTIFY")) {
             emit roomUpdated(); 
             
-            // QUAN TRỌNG: Có người lạ vào, phải tải lại danh sách để hiện tên họ lên Slot 2
             sendGetRoomInfo();
         }
         else if (response.contains("COMMAND: MATCH_FOUND_NOTIFY")) {
             QString roomId = getPayloadValue("room_id");
             qDebug() << "[CLIENT] TIM THAY TRAN! Room ID:" << roomId;
-            
-            // Phát tín hiệu để UI biết mà chuyển màn hình
             emit matchFound(roomId);
         }
-        // Trong GameClient::onReadyRead()
         else if (response.contains("COMMAND: START_MATCH")) {
             QString matchId = getPayloadValue("match_id");
             QString roomId = getPayloadValue("room_id");
@@ -281,47 +254,43 @@ else if (response.contains("COMMAND: FRIEND_LIST_RES")) {
             // Phát tín hiệu update (nếu cần)
             emit roomUpdated(); 
             
-            // QUAN TRỌNG: Gọi ngay hàm này để lấy danh sách mới nhất (đã trừ người kia ra)
+            // lấy danh sách mới nhất (đã trừ người kia ra)
             sendGetRoomInfo(); 
         }
         else if (response.contains("COMMAND: LEADERBOARD_RES")) {
-    QList<RankItem> items;
-    QString data = getPayloadValue("data");
-    qDebug() << "[CLIENT DEBUG] Leaderboard Data RAW:" << data;
-    
-    // Tách các người chơi bằng dấu "|"
-    QStringList entries = data.split("|", Qt::SkipEmptyParts);
-    
-    for (const QString& entry : entries) {
-        QStringList parts = entry.split(",");
-        if (parts.size() >= 3) {
-            RankItem item;
-            item.name = parts[0];
-            item.score = parts[1].toInt();
-            item.rank = parts[2];
-            items.append(item);
+            QList<RankItem> items;
+            QString data = getPayloadValue("data");
+            qDebug() << "[CLIENT DEBUG] Leaderboard Data RAW:" << data;
+            
+        
+            QStringList entries = data.split("|", Qt::SkipEmptyParts);
+            
+            for (const QString& entry : entries) {
+                QStringList parts = entry.split(",");
+                if (parts.size() >= 3) {
+                    RankItem item;
+                    item.name = parts[0];
+                    item.score = parts[1].toInt();
+                    item.rank = parts[2];
+                    items.append(item);
+                }
+            }
+            qDebug() << "[CLIENT DEBUG] Parsed items count:" << items.size();
+            emit leaderboardReceived(items);
         }
-    }
-    qDebug() << "[CLIENT DEBUG] Parsed items count:" << items.size();
-    emit leaderboardReceived(items);
-}
 else if (response.contains("COMMAND: MATCH_CREATED")) {
             QString matchId = getPayloadValue("match_id");
             
-            // Lấy room_id (có thể rỗng nếu Server chưa gửi, nhưng không sao)
+            // Lấy room_id
             QString roomId = getPayloadValue("room_id"); 
             
             qDebug() << "[NET] Chủ phòng đã bắt đầu game! MatchID:" << matchId;
-            
-            // Dùng chung tín hiệu với đấu Rank để chuyển màn hình
             emit matchStartedDirectly(matchId, roomId);
         }
-    } // Kết thúc vòng lặp for packet
+    }
 }
 
-// ============================================================
 // HÀM GỬI YÊU CẦU TÌM KIẾM
-// ============================================================
 void GameClient::sendSearchRequest(const QString &keyword) {
     if (!isConnected()) {
         qDebug() << "[CLIENT ERROR] Chưa kết nối Server, không thể tìm kiếm!";
@@ -332,9 +301,7 @@ void GameClient::sendSearchRequest(const QString &keyword) {
     sendMessage("SEARCH_REQ", payload);
 }
 
-// ============================================================
 // HÀM GỬI YÊU CẦU KẾT BẠN
-// ============================================================
 void GameClient::sendAddFriendRequest(const QString &username) {
     if (!isConnected()) return;
     qDebug() << "[Client] Đang gửi lời mời kết bạn tới:" << username;
@@ -358,10 +325,6 @@ void GameClient::sendGetFriendList() {
 
 void GameClient::sendJoinRoom(int roomId) {
     if (!isConnected()) return;
-    
-    // CŨ: sendMessage("JOIN_ROOM_REQ", QString("room_id=%1").arg(roomId));
-    
-    // MỚI: Gửi kèm user_id
     QString payload = QString("room_id=%1;user_id=%2")
                       .arg(roomId)
                       .arg(m_currentUserID);
@@ -370,30 +333,24 @@ void GameClient::sendJoinRoom(int roomId) {
 }
 void GameClient::sendCreateRoomRequest() {
     if (!isConnected()) return;
-    // Fix: Send user_id so Server knows who is creating the room
     QString payload = QString("user_id=%1").arg(m_currentUserID);
     sendMessage("CREATE_ROOM", payload); 
 }
-// Thêm vào GameClient.cpp
 void GameClient::sendGetRoomInfo() {
     if (!isConnected()) return;
     QString payload = QString("user_id=%1").arg(m_currentUserID);
-    
-    // CORRECT COMMAND:
     sendMessage("GET_ROOM_INFO", payload); 
 }
 void GameClient::sendLeaveRoom() {
     qDebug() << "[CLIENT] Dang gui lenh LEAVE_ROOM_REQ...";
     if (isConnected()) {
         sendMessage("LEAVE_ROOM_REQ", ""); 
-        // Flush để đẩy dữ liệu đi ngay (quan trọng)
         m_socket->flush(); 
     }
 }
 void GameClient::sendFindMatch() {
     if (isConnected()) {
         qDebug() << "[CLIENT] Dang tim tran Rank...";
-        // Đổi từ FIND_MATCH_REQ thành FIND_MATCH cho khớp với Dispatcher của Server
         sendMessage("FIND_MATCH", QString("user_id=%1").arg(m_currentUserID)); 
         m_socket->flush();
     }
@@ -411,9 +368,6 @@ void GameClient::sendGetLeaderboardRequest() {
 void GameClient::sendStartGame(int roomId) {
     if (!isConnected()) return;
     qDebug() << "[CLIENT] Host dang bat dau tran dau cho Room ID:" << roomId;
-    
-    // Gửi lệnh CREATE_MATCH kèm room_id lên Server
-    // Lệnh này sẽ được Dispatcher chuyển cho MatchService::createMatchFromRoom
     QString payload = QString("room_id=%1").arg(roomId);
     sendMessage("CREATE_MATCH", payload); 
 }

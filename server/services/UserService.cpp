@@ -193,9 +193,7 @@ Message UserService::resetPassword(const Message &msg) {
     return resp;
 }
 
-// ==========================================================
-// [MỚI] HÀM TÌM KIẾM USER (ĐỂ DISPATCHER GỌI)
-// ==========================================================
+// HÀM TÌM KIẾM USER (ĐỂ DISPATCHER GỌI)
 Message UserService::searchUsers(const Message& msg) {
     Message resp;
     resp.command = "SEARCH_RES";
@@ -204,11 +202,8 @@ Message UserService::searchUsers(const Message& msg) {
     if (msg.params.count("keyword")) {
         keyword = msg.params.at("keyword");
     }
-
     // Gọi DAO lấy danh sách
     std::vector<UserDAO::UserSearchInfo> results = UserDAO::searchUsers(keyword);
-
-    // Đóng gói payload: "user1,Online;user2,Offline;"
     std::string payload = "";
     for (const auto& u : results) {
         if (!payload.empty()) payload += "|"; 
@@ -216,13 +211,7 @@ Message UserService::searchUsers(const Message& msg) {
     }
 
     // ClientHandler sẽ lấy giá trị này để build packet
-    // Lưu ý: Client cần dùng getPayloadValue("users") hoặc logic parse tương ứng
     resp.params["users"] = payload; 
-    
-    // Vì Client code cũ parse raw payload, ta có thể trick bằng cách để MessageParser build ra raw string
-    // Tuy nhiên, chuẩn nhất là dùng key-value. 
-    // Nếu Client của bạn parse thẳng body (split ";"), bạn có thể cần chỉnh Client để lấy value của key "users".
-    
     return resp;
 }
 
@@ -234,10 +223,7 @@ std::string UserService::getUsername(int userId) {
 Message UserService::getLeaderboard(const Message& msg) {
     Message resp;
     resp.command = "LEADERBOARD_RES";
-
     auto topList = UserDAO::getLeaderboard(10);
-
-    // Đóng gói dạng: user,point,rank|user,point,rank|...
     std::string payload = "";
     for (const auto& item : topList) {
         if (!payload.empty()) payload += "|";

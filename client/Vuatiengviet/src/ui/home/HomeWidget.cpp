@@ -15,7 +15,7 @@
 #include <QMessageBox>
 
 HomeWidget::HomeWidget(QWidget *parent) : QWidget(parent) {
-    this->setObjectName("HomeScreen"); // ID để set background cầu vồng
+    this->setObjectName("HomeScreen");
     setupUi();
 }
 
@@ -25,9 +25,6 @@ void HomeWidget::setupUi() {
     mainLayout->setContentsMargins(40, 30, 40, 40);
     mainLayout->setSpacing(20);
 
-    // =================================================
-    // 1. THANH TRÊN (PROFILE BAR)
-    // =================================================
     QHBoxLayout *topLayout = new QHBoxLayout();
 
     QFrame *profileFrame = new QFrame(this);
@@ -99,7 +96,6 @@ void HomeWidget::setupUi() {
     btnLogout->setFixedSize(50, 50);
     btnLogout->setCursor(Qt::PointingHandCursor);
 
-    // Load icon logout (Nếu có)
     QIcon logoutIcon(":/logout.png");
     if (!logoutIcon.isNull()) {
         btnLogout->setIcon(logoutIcon);
@@ -109,24 +105,20 @@ void HomeWidget::setupUi() {
     topLayout->addWidget(profileFrame, 0, Qt::AlignTop);
     topLayout->addStretch();
     topLayout->addWidget(btnHistory, 0, Qt::AlignTop);
-    topLayout->addSpacing(5);                        // Khoảng cách giữa 2 nút
+    topLayout->addSpacing(5);                        
     topLayout->addWidget(btnSettings, 0, Qt::AlignTop);
-    topLayout->addSpacing(5);                        // Khoảng cách giữa 2 nút
-    topLayout->addWidget(btnInbox, 0, Qt::AlignTop);  // Nút Chuông trước
-    topLayout->addSpacing(5);                        // Khoảng cách giữa 2 nút
+    topLayout->addSpacing(5);                       
+    topLayout->addWidget(btnInbox, 0, Qt::AlignTop);  
+    topLayout->addSpacing(5);                        
     topLayout->addWidget(btnLogout, 0, Qt::AlignTop);
 
-    // =================================================
-    // 2. KHU VỰC GIỮA (3 CỘT: BXH - GAME - BẠN BÈ)
-    // =================================================
+  
     QHBoxLayout *midLayout = new QHBoxLayout();
     midLayout->setSpacing(20);
 
-    // --- CỘT TRÁI: BXH ---
     leaderboardWidget = new LeaderboardWidget(this);
     // leaderboardWidget->setFixedWidth(250); 
 
-    // --- CỘT GIỮA: LOGO & NÚT CHƠI ---
     QVBoxLayout *centerContainer = new QVBoxLayout();
     centerContainer->setAlignment(Qt::AlignCenter);
     centerContainer->setSpacing(20);
@@ -135,7 +127,6 @@ void HomeWidget::setupUi() {
     QHBoxLayout *playBtnLayout = new QHBoxLayout();
     playBtnLayout->setSpacing(20);
     
-    // --- SỬA LỖI QUAN TRỌNG: PHẢI NEW NÚT TRƯỚC KHI DÙNG ---
     btnRank = new QToolButton(this);
     btnRank->setText("TÌM TRẬN\n(Đấu Rank)");
     btnRank->setObjectName("BtnMode_Rank");
@@ -159,9 +150,8 @@ void HomeWidget::setupUi() {
     QIcon friendIcon(":/friends.png"); 
     if (!friendIcon.isNull()) {
         btnFriend->setIcon(friendIcon);
-        btnFriend->setIconSize(QSize(70, 70)); // Chỉnh kích thước icon
+        btnFriend->setIconSize(QSize(70, 70)); 
     }
-    // -------------------------------------------------------
 
     playBtnLayout->addWidget(btnRank);
     playBtnLayout->addWidget(btnFriend);
@@ -169,31 +159,20 @@ void HomeWidget::setupUi() {
     // centerContainer->addWidget(lblLogo);
     centerContainer->addLayout(playBtnLayout);
 
-    // --- CỘT PHẢI: BẠN BÈ ---
     socialWidget = new SocialWidget(this);
     socialWidget->setFixedWidth(350);
 
-    // ADD 3 CỘT VÀO MID LAYOUT
-    midLayout->addWidget(leaderboardWidget);      // Trái
-    midLayout->addLayout(centerContainer, 1);     // Giữa (Co giãn)
-    midLayout->addWidget(socialWidget);           // Phải
+    midLayout->addWidget(leaderboardWidget);      
+    midLayout->addLayout(centerContainer, 1);     
+    midLayout->addWidget(socialWidget);           
 
-   // =================================================
     // 3. THANH DƯỚI (MENU PHỤ)
-    // =================================================
     QHBoxLayout *bottomLayout = new QHBoxLayout();
     bottomLayout->setSpacing(20);
     bottomLayout->setAlignment(Qt::AlignCenter);
 
-   
-  
-
-    // =================================================
-    // LẮP RÁP LAYOUT (ĐÃ SỬA GỌN)
-    // =================================================
-    // Chỉ add mỗi thứ 1 lần theo thứ tự từ trên xuống dưới
     mainLayout->addLayout(topLayout);
-    mainLayout->addLayout(midLayout, 1); // Phần giữa chiếm phần lớn màn hình
+    mainLayout->addLayout(midLayout, 1);
     mainLayout->addLayout(bottomLayout);
 
     // Kết nối
@@ -217,9 +196,6 @@ connect(&GameClient::instance(), &GameClient::pendingListReceived, [=](const QSt
 });
 connect(&GameClient::instance(), &GameClient::userInfoReceived, 
             this, &HomeWidget::setPlayerInfo);
-
-// Kết nối tín hiệu nhận thông tin phòng với hàm cập nhật giao diện
-
 }
 
 void HomeWidget::setPlayerInfo(const QString& name, int score, const QString& rankName) {
@@ -248,11 +224,9 @@ void HomeWidget::openSettings() {
     dlg.exec(); 
 }
 void HomeWidget::openHistory() {
-    // Code mở lịch sử (ví dụ dùng ProfileDialog tab lịch sử)
    ProfileDialog dlg(m_currentUsername, m_currentScore, m_currentRankName, this);
     dlg.exec();
 }
-// src/ui/home/HomeWidget.cpp
 
 void HomeWidget::joinRankedRoom(const QString& roomId) {
     Q_UNUSED(roomId);
@@ -273,9 +247,8 @@ void HomeWidget::joinRankedRoom(const QString& roomId) {
 
     // 4. Kết nối quay lại màn hình Home khi thoát phòng
     connect(roomWidget, &FriendRoomWidget::leftRoom, this, [this, roomWidget](){
-        this->show();           // Hiện lại Home
-        roomWidget->close();    // Đóng phòng
-    });
+        this->show();           
+        roomWidget->close();        });
 
     // 5. Cập nhật thông tin người chơi
     connect(&GameClient::instance(), &GameClient::roomInfoReceived, 
@@ -286,54 +259,43 @@ void HomeWidget::joinRankedRoom(const QString& roomId) {
     roomWidget->raise();        // Đưa lên lớp trên cùng
     roomWidget->activateWindow(); // Tập trung chuột/phím vào đây
     
-    this->hide();               // Sau đó mới ẩn màn hình Home (để tránh màn hình đen)
+    this->hide();             
 
     // 7. Lấy dữ liệu
     GameClient::instance().sendGetRoomInfo(); 
-    // Trong HomeWidget.cpp, đoạn xử lý khi nhấn tìm trận
-connect(&GameClient::instance(), &GameClient::matchStartedDirectly, 
-        this, [this](QString matchId, QString roomId) {
-    
-    // 1. Đóng Dialog Radar tìm kiếm (nếu đang mở)
-    if (m_radarDialog) m_radarDialog->accept();
+    connect(&GameClient::instance(), &GameClient::matchStartedDirectly, 
+            this, [this](QString matchId, QString roomId) {
+        
+        // 1. Đóng Dialog Radar tìm kiếm (nếu đang mở)
+        if (m_radarDialog) m_radarDialog->accept();
 
-    // 2. Khởi tạo Widget Game và chuyển màn hình
-    // Dữ liệu lúc này đã được lưu vào DB (Match, MatchPlayers, MatchQuestions)
-    this->switchToGameScreen(matchId, roomId);
-});
-}
+        // 2. Khởi tạo Widget Game và chuyển màn hình
+        // Dữ liệu lúc này đã được lưu vào DB (Match, MatchPlayers, MatchQuestions)
+        this->switchToGameScreen(matchId, roomId);
+    });
+    }
 
 void HomeWidget::playWithFriend() {
     QDialog *dlg = new QDialog(this);
     dlg->setWindowTitle("Phòng Chờ");
     dlg->resize(1024, 768);
-    dlg->setAttribute(Qt::WA_DeleteOnClose); // Tự xóa bộ nhớ khi đóng
+    dlg->setAttribute(Qt::WA_DeleteOnClose);
 
     QVBoxLayout *layout = new QVBoxLayout(dlg);
     layout->setContentsMargins(0,0,0,0);
     
-    // ========================================================================
-    // [FIX QUAN TRỌNG] TRUYỀN m_currentUsername VÀO ĐÂY
-    // Để bên trong FriendRoomWidget biết ai là mình mà hiện nút Bắt đầu
-    // ========================================================================
     FriendRoomWidget *roomWidget = new FriendRoomWidget(m_currentUsername, true, dlg);
     layout->addWidget(roomWidget);
 
-    // Kết nối nhận thông tin phòng (Host/Guest) để cập nhật giao diện
-    // Dùng 'dlg' làm context để tự ngắt kết nối khi đóng Dialog (Tránh Crash)
     connect(&GameClient::instance(), &GameClient::roomInfoReceived, 
         dlg, [roomWidget](const QString &p1, const QString &p2, const QString &p3){
-    if (roomWidget) {
-        // Truyền đủ 3 tham số (p1, p2, p3) vào hàm cập nhật
-        roomWidget->updateMembers(p1, p2, p3);
-    }
-});
-
-    // Kết nối khi nhận được Room ID từ Server
+        if (roomWidget) {
+            roomWidget->updateMembers(p1, p2, p3);
+        }
+    });
     connect(&GameClient::instance(), &GameClient::roomJoined, dlg, [=](QString roomId){
         if (roomWidget) {
             roomWidget->setRoomID(roomId);
-            // Cập nhật ngay mình là Host để hiện avatar slot 1
             roomWidget->setHostInfo(m_currentUsername); 
         }
     });
@@ -347,26 +309,21 @@ void HomeWidget::playWithFriend() {
     dlg->exec(); 
 }
 void HomeWidget::openInbox() {
-    // Reset màu nút chuông
     btnInbox->setStyleSheet("background-color: transparent;"); 
     btnInbox->setObjectName("LogoutBtnIcon");
 
     if(m_notifyDialog) {
-        m_notifyDialog->show(); // Hiển thị Dialog bền vững
+        m_notifyDialog->show(); 
         m_notifyDialog->raise();
         m_notifyDialog->activateWindow();
     }
 }
-// Trong HomeWidget.cpp
-// Trong HomeWidget.cpp sửa lại hàm playRanked
 void HomeWidget::playRanked() {
     m_radarDialog = new QDialog(this);
     m_radarDialog->setWindowTitle("Đang tìm đối thủ...");
     m_radarDialog->setFixedSize(400, 500);
     
     QVBoxLayout *layout = new QVBoxLayout(m_radarDialog);
-    
-    // SỬA: Thay vì dùng QLabel trống, hãy dùng MatchmakingWidget bạn đã viết
     MatchmakingWidget *matchWidget = new MatchmakingWidget(m_radarDialog);
     layout->addWidget(matchWidget);
 
@@ -383,9 +340,7 @@ void HomeWidget::playRanked() {
     m_radarDialog->exec();
 }
 
-// Hàm này để bạn test xem DB đã lưu chưa
 void HomeWidget::switchToGameScreen(QString matchId, QString roomId) {
-    // Vì chưa có màn hình Game, chúng ta hiện thông báo để xác nhận MatchID từ DB
     QMessageBox::information(this, "Ghép trận thành công", 
         QString("Đã lưu vào DB!\nMatch ID: %1\nRoom ID: %2\n\nHệ thống đã bốc sẵn 30 câu hỏi.").arg(matchId).arg(roomId));
     

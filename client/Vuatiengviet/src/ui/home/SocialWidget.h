@@ -5,7 +5,7 @@
 #include <QListWidget>
 #include <QLineEdit>
 #include <QPushButton>
-#include "../../network/GameClient.h" // Include để nhận diện struct UserSearchResult
+#include "../../network/GameClient.h" 
 #include <QApplication>
 
 
@@ -23,13 +23,12 @@ private slots:
 private:
     void setupUi();
     
-    // --- CÁC HÀM BẠN ĐANG THIẾU TRONG FILE HEADER ---
     void setupTabFriends(QWidget *tab);
     void setupTabRecent(QWidget *tab);
     void reloadFriendList(); 
     void addSearchResultItem(const UserSearchResult& user);
     void addPlayerItem(QListWidget *list, const QString& name, bool isFriend, const QString& status);
-    // ------------------------------------------------
+  
 
     QLineEdit *txtSearch;
     QPushButton *btnSearch;

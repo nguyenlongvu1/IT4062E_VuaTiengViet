@@ -87,17 +87,12 @@ bool FriendDAO::requestExists(int from_user_id, int to_user_id) {
     int count = DB::queryInt(query);
     return count > 0;
 }
-// FriendDAO.cpp
 
 std::vector<UserDAO::UserSearchInfo> FriendDAO::getFriends(int userId) {
     std::vector<UserDAO::UserSearchInfo> friends;
     sqlite3* db = DB::getHandle();
     if (!db) return friends;
 
-    // u.user_id: Khóa chính của bảng Users
-    // f.user_id và f.friend_user_id: Các cột trong bảng Friends
-    // s.user_id: Cột trong bảng Sessions
-    // Thêm DISTINCT ngay sau SELECT
 std::string sql = 
     "SELECT DISTINCT u.username, CASE WHEN s.status IS NOT NULL THEN 'Online' ELSE 'Offline' END as status "
     "FROM Friends f "

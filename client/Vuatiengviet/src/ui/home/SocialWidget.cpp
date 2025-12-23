@@ -63,7 +63,6 @@ void SocialWidget::setupUi() {
         this, &SocialWidget::onFriendListUpdated);
     // SocialWidget.cpp -> setupUi()
 
-// Kết nối này cực kỳ quan trọng: Khi Server trả về danh sách bạn bè
 connect(&GameClient::instance(), &GameClient::friendListReceived, 
         this, [=](const QList<UserSearchResult>& friends){
     
@@ -72,12 +71,11 @@ connect(&GameClient::instance(), &GameClient::friendListReceived,
 
     listFriends->clear();
     if (friends.isEmpty()) {
-        // Có thể thêm 1 label thông báo "Chưa có bạn bè"
         return;
     }
 
     for (const auto& user : friends) {
-        addSearchResultItem(user); // Vẽ người bạn đó lên màn hình
+        addSearchResultItem(user); 
     }
 });
     connect(&GameClient::instance(), &GameClient::friendListReceived, 
@@ -161,7 +159,7 @@ void SocialWidget::addSearchResultItem(const UserSearchResult& user) {
     hLayout->addWidget(lblInfo);
     hLayout->addStretch();
 
-    // 3. LOGIC BỎ NÚT NHẮN TIN: Chỉ hiện nút nếu CHƯA là bạn bè
+    // 3. Chỉ hiện nút nếu CHƯA là bạn bè
     if (!user.isFriend) {
         QPushButton *btn = new QPushButton("+ Kết bạn", wid);
         btn->setFixedSize(80, 28);

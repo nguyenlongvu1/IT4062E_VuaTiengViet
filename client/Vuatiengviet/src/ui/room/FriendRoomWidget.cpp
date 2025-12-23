@@ -19,9 +19,7 @@ FriendRoomWidget::FriendRoomWidget(QString myUsername,bool isHost, QWidget *pare
     frameSlot2 = nullptr;
 
     setupUi();
-    
-    // Fake dữ liệu ban đầu (nếu cần test giao diện)
-    // updateMembers("Bạn (Chủ phòng)", "");
+
 }
 
 void FriendRoomWidget::setupUi() {
@@ -48,13 +46,13 @@ void FriendRoomWidget::setupUi() {
     
     QVBoxLayout *layout1 = new QVBoxLayout(frameSlot1);
     
-    // QLabel *lblAvatar1 = new QLabel("H", frameSlot1); // Avatar tạm
+    // QLabel *lblAvatar1 = new QLabel("H", frameSlot1); 
     lblAvatar1 = new QLabel("H", frameSlot1);
     lblAvatar1->setFixedSize(80, 80);
     lblAvatar1->setAlignment(Qt::AlignCenter);
     lblAvatar1->setStyleSheet("background-color: #3498db; color: white; border-radius: 40px; font-weight: bold; font-size: 24px;");
 
-    lblUser1 = new QLabel("Đang tải...", frameSlot1); // <-- QUAN TRỌNG: Gán vào biến thành viên
+    lblUser1 = new QLabel("Đang tải...", frameSlot1); 
     lblUser1->setAlignment(Qt::AlignCenter);
     lblUser1->setStyleSheet("font-size: 16px; font-weight: bold; color: white;");
 
@@ -71,7 +69,7 @@ void FriendRoomWidget::setupUi() {
     // === SLOT 2: GUEST ===
     frameSlot2 = new QFrame(this);
     frameSlot2->setFixedSize(200, 300);
-    frameSlot2->setStyleSheet("border: 1px solid #555; background-color: rgba(0,0,0,0.2); border-radius: 10px;"); // Mặc định là trống
+    frameSlot2->setStyleSheet("border: 1px solid #555; background-color: rgba(0,0,0,0.2); border-radius: 10px;"); 
 
     QVBoxLayout *layout2 = new QVBoxLayout(frameSlot2);
 
@@ -82,7 +80,7 @@ void FriendRoomWidget::setupUi() {
     lblAvatar2->setAlignment(Qt::AlignCenter);
     lblAvatar2->setStyleSheet("background-color: #7f8c8d; color: white; border-radius: 40px; font-weight: bold; font-size: 24px;");
 
-    lblUser2 = new QLabel("Trống", frameSlot2); // <-- QUAN TRỌNG
+    lblUser2 = new QLabel("Trống", frameSlot2); 
     lblUser2->setAlignment(Qt::AlignCenter);
     lblUser2->setStyleSheet("font-size: 16px; color: #bdc3c7;");
 
@@ -103,13 +101,13 @@ void FriendRoomWidget::setupUi() {
     
     QVBoxLayout *layout3 = new QVBoxLayout(frameSlot3);
     
-    // QLabel *lblAvatar1 = new QLabel("H", frameSlot1); // Avatar tạm
+    // QLabel *lblAvatar1 = new QLabel("H", frameSlot1);
     lblAvatar3 = new QLabel("H", frameSlot3);
     lblAvatar3->setFixedSize(80, 80);
     lblAvatar3->setAlignment(Qt::AlignCenter);
     lblAvatar3->setStyleSheet("background-color: #3498db; color: white; border-radius: 40px; font-weight: bold; font-size: 24px;");
 
-    lblUser3 = new QLabel("Đang tải...", frameSlot3); // <-- QUAN TRỌNG: Gán vào biến thành viên
+    lblUser3 = new QLabel("Đang tải...", frameSlot3); 
     lblUser3->setAlignment(Qt::AlignCenter);
     lblUser3->setStyleSheet("font-size: 16px; font-weight: bold; color: white;");
     lblStatus3 = new QLabel("ĐÃ SẴN SÀNG", frameSlot3);
@@ -193,26 +191,17 @@ void FriendRoomWidget::onJoinRoomClicked() {
 
 // Xử lý nút rời phòng
 void FriendRoomWidget::onLeaveBtnClicked() {
-    qDebug() << "[UI] Nut Roi Phong da duoc bam!"; // <--- THÊM DÒNG NÀY
+    qDebug() << "[UI] Nut Roi Phong da duoc bam!"; 
     
     // Gửi lệnh lên Server
     GameClient::instance().sendLeaveRoom();
     emit leftRoom(); 
 }
 
-// FriendRoomWidget.cpp
 
-// FriendRoomWidget.cpp
-
-// =============================================================================
-// HÀM CẬP NHẬT GIAO DIỆN (3 SLOT)
-// =============================================================================
 void FriendRoomWidget::updateMembers(const QString& p1, const QString& p2, const QString& p3) {
     qDebug() << "[UI] Update Room: P1=" << p1 << " | P2=" << p2 << " | P3=" << p3;
 
-    // -------------------------------------------------------------------------
-    // 1. XỬ LÝ SLOT 1: CHỦ PHÒNG (HOST)
-    // -------------------------------------------------------------------------
     if (lblUser1) {
         if (!p1.isEmpty()) {
             // Cập nhật thông tin Host
@@ -231,9 +220,9 @@ void FriendRoomWidget::updateMembers(const QString& p1, const QString& p2, const
                 );
             }
 
-            // --- LOGIC QUYỀN CHỦ PHÒNG (QUAN TRỌNG) ---
+            // --- LOGIC QUYỀN CHỦ PHÒNG 
             // Nếu người 1 rời phòng, Server đẩy người 2 lên làm p1.
-            // Lúc này code sẽ so sánh lại: p1 mới có phải là mình không?
+            // Lso sánh lại: p1 mới có phải là mình không?
             if (p1 == m_myUsername) {
                 // Mình là Host mới -> Hiện nút Bắt đầu
                 btnAction->setVisible(true);
@@ -252,50 +241,35 @@ void FriendRoomWidget::updateMembers(const QString& p1, const QString& p2, const
         }
     }
 
-    // -------------------------------------------------------------------------
-    // 2. XỬ LÝ SLOT 2 & 3 (KHÁCH) - DÙNG HÀM PHỤ TRỢ
-    // -------------------------------------------------------------------------
     updateGuestSlot(frameSlot2, lblUser2, lblAvatar2, lblStatus2, p2);
     updateGuestSlot(frameSlot3, lblUser3, lblAvatar3, lblStatus3, p3);
 }
 
-// =============================================================================
-// HÀM PHỤ TRỢ: CẬP NHẬT SLOT KHÁCH
-// Giúp code gọn hơn, không phải copy paste logic cho Slot 2 và Slot 3
-// =============================================================================
+
 void FriendRoomWidget::updateGuestSlot(QFrame* frame, QLabel* lblName, QLabel* lblAvatar, QLabel* lblStatus, const QString& playerName) {
     if (!frame || !lblName || !lblAvatar || !lblStatus) return;
 
     if (!playerName.isEmpty()) {
-        // --- TRƯỜNG HỢP CÓ NGƯỜI (Code cũ của bạn) ---
+        // --- TRƯỜNG HỢP CÓ NGƯỜI 
         lblName->setText(playerName);
         lblStatus->setText("ĐÃ VÀO");
         lblAvatar->setText(playerName.left(1).toUpper());
         lblAvatar->setStyleSheet("background-color: #e67e22; color: white; border-radius: 40px; font-weight: bold; font-size: 24px;");
         frame->setStyleSheet("border: 2px solid #2ecc71; background-color: rgba(46, 204, 113, 0.1); border-radius: 10px;");
     } 
-    else { 
-        // ================================================================
-        // [QUAN TRỌNG] PHẢI CÓ ĐOẠN NÀY ĐỂ XÓA NGƯỜI CHƠI CŨ ĐI
-        // ================================================================
-        
-        // 1. Reset tên thành "Trống"
+    else {         
+        // Reset tên thành "Trống"
         lblName->setText("Trống");
-        
-        // 2. Reset trạng thái
         lblStatus->setText("Đang chờ...");
-
-        // 3. Reset Avatar về dấu hỏi chấm (?) và màu Xám
         lblAvatar->setText("?");
         lblAvatar->setStyleSheet(
-            "background-color: #7f8c8d; " // Màu xám
+            "background-color: #7f8c8d; " 
             "color: white; "
             "border-radius: 40px; "
             "font-weight: bold; "
             "font-size: 24px;"
         );
 
-        // 4. Reset khung viền về màu tối
         frame->setStyleSheet("border: 1px solid #555; background-color: rgba(0,0,0,0.2); border-radius: 10px;");
     }
 }

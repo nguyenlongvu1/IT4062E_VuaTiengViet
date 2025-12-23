@@ -20,14 +20,11 @@ void ClientHandler::run() {
 
         std::cout << "[CLIENT " << getUserId() << "] >> " << msg << std::endl;
 
-        // 1. Parse tin nhắn
         auto parsed = MessageParser::parse(msg);
         parsed.params["user_id"] = std::to_string(getUserId());
 
-        // 2. Gửi sang Dispatcher xử lý logic
         Message response = Dispatcher::handleCommand(parsed, this);
 
-        // 3. XỬ LÝ CÁC TRẠNG THÁI SERVER (Login/Logout)
         if (response.command == "LOGIN_OK" && response.params.count("user_id")) {
             int uid = std::stoi(response.params.at("user_id"));
             setUserId(uid);
@@ -41,7 +38,6 @@ void ClientHandler::run() {
         }
 
         // 4. XỬ LÝ BROADCAST (Gửi cho nhiều người)
-        // Service trả về params["broadcast"] = "true" và params["players"] = "id1,id2,..."
         if (response.params.count("broadcast") && response.params.at("broadcast") == "true") {
             std::vector<int> targetIds;
             
@@ -59,37 +55,25 @@ void ClientHandler::run() {
                     if(!item.empty()) targetIds.push_back(std::stoi(item));
                 }
             }
-
-            // Thực hiện gửi
             std::string packet = MessageParser::build(response);
             server->sendToUsers(targetIds, packet);
         }
         
         // 5. XỬ LÝ NOTIFICATION (Gửi thông báo riêng cho người khác - ví dụ: Kết bạn)
-        // Service trả về params["notify_id"] và params["notify_msg"]
         else if (response.params.count("notify_id") && response.params.count("notify_msg")) {
             
-            // BƯỚC 1: Lấy thông tin cần gửi cho người nhận (Target)
             int targetId = std::stoi(response.params.at("notify_id"));
             std::string notifyPacket = response.params.at("notify_msg");
-            
-            // BƯỚC 2: Gửi thông báo cho người kia
             server->sendToUser(targetId, notifyPacket);
 
-            // BƯỚC 3: [FIX QUAN TRỌNG] Xóa dữ liệu notify khỏi response trước khi gửi lại cho người gửi (Sender)
-            // Lý do: Nếu để nguyên, Client người gửi sẽ thấy chuỗi "COMMAND:..." trong payload 
-            // và lầm tưởng đó là một lệnh mới gửi cho mình -> Gây ra lỗi hiện thông báo 2 bên.
             response.params.erase("notify_id");
             response.params.erase("notify_msg");
 
-            // BƯỚC 4: Gửi phản hồi kết quả (ADD_FRIEND_RES) về cho người gửi
             std::string senderPacket = MessageParser::build(response);
             sendMessage(senderPacket);
         }
 
-        // 6. PHẢN HỒI THÔNG THƯỜNG (Gửi lại cho chính người gọi)
         else {
-            // Chỉ gửi nếu command không phải là NO_RESPONSE (một số logic không cần trả lời)
             if (response.command != "NO_RESPONSE") {
                 std::string packet = MessageParser::build(response);
                 sendMessage(packet);
@@ -97,7 +81,6 @@ void ClientHandler::run() {
         }
     }
 
-    // --- CLEANUP KHI NGẮT KẾT NỐI ---
     performCleanup();
 }
 
@@ -106,12 +89,10 @@ void ClientHandler::performCleanup() {
     if (uid > 0) {
         std::cout << "[CLEANUP] User (ID: " << uid << ") disconnected.\n";
 
-        // Logic rời phòng khi rớt mạng
         int roomId = RoomService::leaveRoom(uid);
         if (roomId != -1) {
             std::vector<int> survivors = RoomService::getPlayers(roomId);
             for (int pid : survivors) {
-                // Giả lập lệnh lấy Info để cập nhật lại UI cho người ở lại
                 Message fakeReq; fakeReq.params["user_id"] = std::to_string(pid);
                 Message infoMsg = RoomService::getRoomInfo(fakeReq);
                 server->sendToUser(pid, MessageParser::build(infoMsg));

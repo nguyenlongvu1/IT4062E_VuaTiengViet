@@ -2,8 +2,8 @@
 #define FRIENDROOMWIDGET_H
 
 #include <QWidget>
-#include <QList> // Thêm include này
-#include <QLabel> // <--- Thêm cái này
+#include <QList> 
+#include <QLabel> 
 #include <QFrame>
 
 class QVBoxLayout;
@@ -28,7 +28,7 @@ signals:
     void startGame();
 private slots:
     void onJoinRoomClicked(); 
-    // void onLeaveBtnClicked(); // Thực hiện gửi tin nhắn rời phòng lên Server
+    // void onLeaveBtnClicked(); 
     // void onStartBtnClicked();
     void onLeaveBtnClicked();
 private:
@@ -36,9 +36,7 @@ private:
     bool m_isHost;
     QLabel *lblRoomID;
     
-    // --- SỬA LỖI: Đổi tên biến 'slots' thành 'playerSlots' ---
     QList<QWidget*> playerSlots; 
-    // ---------------------------------------------------------
 
     QPushButton *btnAction; 
 

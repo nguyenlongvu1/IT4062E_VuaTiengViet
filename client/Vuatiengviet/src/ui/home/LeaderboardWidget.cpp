@@ -33,7 +33,7 @@ void LeaderboardWidget::setupUi() {
 
     // List hiển thị
     listRank = new QListWidget(this);
-    listRank->setFocusPolicy(Qt::NoFocus); // Bỏ viền khi click
+    listRank->setFocusPolicy(Qt::NoFocus); 
     listRank->setStyleSheet(
         "QListWidget { background-color: rgba(0,0,0,0.3); border-radius: 10px; border: 1px solid rgba(255,255,255,0.1); }"
         "QListWidget::item { color: white; padding: 10px; border-bottom: 1px solid rgba(255,255,255,0.05); }"
@@ -60,11 +60,11 @@ void LeaderboardWidget::updateLeaderboard(const QList<RankItem> &items) {
         
         // Tô màu top 3
         if (i == 0) {
-            item->setForeground(QColor("#f1c40f")); // Vàng
-            item->setIcon(QIcon(":/rank1.png"));    // Nếu có icon
+            item->setForeground(QColor("#f1c40f")); 
+            item->setIcon(QIcon(":/rank1.png"));    
         }
-        else if (i == 1) item->setForeground(QColor("#bdc3c7")); // Bạc
-        else if (i == 2) item->setForeground(QColor("#e67e22")); // Đồng
+        else if (i == 1) item->setForeground(QColor("#bdc3c7")); 
+        else if (i == 2) item->setForeground(QColor("#e67e22")); 
         
         // Font chữ
         QFont font = item->font();

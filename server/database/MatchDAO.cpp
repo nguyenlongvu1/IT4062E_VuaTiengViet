@@ -4,7 +4,6 @@
 #include <iostream>
 #include <vector>
 
-// --- Hàm tạo trận đấu (Bạn đã có) ---
 int MatchDAO::createMatch(int rankId, const std::vector<int> &players) {
     sqlite3 *db = DB::getHandle();
     if (!db || players.empty()) return 0;
@@ -78,9 +77,8 @@ int MatchDAO::createMatch(int rankId, const std::vector<int> &players) {
     return matchId;
 }
 
-// =========================================================
-// [MỚI] HÀM LẤY DANH SÁCH NGƯỜI CHƠI TRONG TRẬN
-// =========================================================
+
+// LẤY DANH SÁCH NGƯỜI CHƠI TRONG TRẬN
 std::vector<int> MatchDAO::getPlayersForMatch(int matchId) {
     std::vector<int> players;
     sqlite3 *db = DB::getHandle();
@@ -99,9 +97,7 @@ std::vector<int> MatchDAO::getPlayersForMatch(int matchId) {
     return players;
 }
 
-// =========================================================
-// [MỚI] HÀM LẤY CÂU HỎI CHO TỪNG VÒNG (ROUND)
-// =========================================================
+// LẤY CÂU HỎI CHO TỪNG VÒNG (ROUND)
 std::vector<int> MatchDAO::getQuestionsForMatch(int matchId, int round) {
     std::vector<int> qs;
     sqlite3 *db = DB::getHandle();

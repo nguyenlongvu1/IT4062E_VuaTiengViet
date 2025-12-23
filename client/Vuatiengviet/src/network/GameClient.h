@@ -3,10 +3,9 @@
 
 #include <QObject>
 #include <QTcpSocket>
-#include <QList> // Thêm thư viện này
+#include <QList> 
 
 // --- 1. ĐỊNH NGHĨA CẤU TRÚC DỮ LIỆU TÌM KIẾM ---
-// Struct này dùng chung cho cả UI và Logic
 struct UserSearchResult {
     QString username;
     QString status; // "Online", "Offline", "InGame"
@@ -17,7 +16,7 @@ struct RankItem {
     int score;
     QString rank;
 };
-// ----------------------------------------------
+
 
 class GameClient : public QObject {
     Q_OBJECT
@@ -34,10 +33,10 @@ public:
     bool isConnected() const;
     void sendLogout();
 
-    // --- 2. THÊM HÀM GỬI YÊU CẦU ---
-    void sendSearchRequest(const QString &keyword);      // Tìm kiếm bạn bè
-    void sendAddFriendRequest(const QString &username);  // Gửi lời mời kết bạn
-    // -------------------------------
+   
+    void sendSearchRequest(const QString &keyword);     
+    void sendAddFriendRequest(const QString &username);  
+    
     void sendGetPendingRequests(); 
     void sendAcceptFriend(QString targetUsername);
 
@@ -63,14 +62,12 @@ signals:
     void registerSuccess();
     void registerFailed(QString mssg, QString code);
 
-    // --- 3. THÊM TÍN HIỆU NHẬN KẾT QUẢ ---
     void searchResultReceived(const QList<UserSearchResult> &results);
-    // -------------------------------------
-    void friendRequestReceived(QString senderName); // Có người mời
-    void friendRequestAccepted(QString friendName); // Người ta đã đồng ý
+    void friendRequestReceived(QString senderName); 
+    void friendRequestAccepted(QString friendName); 
     void pendingListReceived(QStringList users);
 
-    void friendListUpdated(); // Tín hiệu báo hiệu cần load lại danh sách
+    void friendListUpdated(); 
     void friendListReceived(const QList<UserSearchResult>& friends);
 
     void joinRoomResult(bool success, QString reason);

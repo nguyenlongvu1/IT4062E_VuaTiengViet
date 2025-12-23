@@ -14,7 +14,7 @@ RegisterWidget::RegisterWidget(QWidget *parent) : QWidget(parent) {
     this->setObjectName("LoginScreen");
 
     QGridLayout *mainLayout = new QGridLayout(this);
-    mainLayout->setContentsMargins(0, 0, 0, 0); // Tràn viền
+    mainLayout->setContentsMargins(0, 0, 0, 0);
     mainLayout->setSpacing(0); 
 
     QWidget *rightOverlay = new QWidget(this);
@@ -28,7 +28,7 @@ RegisterWidget::RegisterWidget(QWidget *parent) : QWidget(parent) {
 
     QGraphicsDropShadowEffect *shadow = new QGraphicsDropShadowEffect(this);
     shadow->setBlurRadius(30);
-    shadow->setColor(QColor(0, 0, 0, 80)); // Màu đen mờ
+    shadow->setColor(QColor(0, 0, 0, 80)); 
     shadow->setOffset(0, 8);
     loginContainer->setGraphicsEffect(shadow);
 
@@ -52,7 +52,7 @@ RegisterWidget::RegisterWidget(QWidget *parent) : QWidget(parent) {
     txtConfirm->setEchoMode(QLineEdit::Password);
     
     QPushButton *btnSubmit = new QPushButton("ĐĂNG KÝ", this);
-    btnSubmit->setObjectName("btnLogin"); // Dùng chung style nút xanh với Login
+    btnSubmit->setObjectName("btnLogin"); 
     btnSubmit->setCursor(Qt::PointingHandCursor);
 
     QPushButton *btnBack = new QPushButton("Quay lại Đăng nhập", this);
@@ -62,17 +62,17 @@ RegisterWidget::RegisterWidget(QWidget *parent) : QWidget(parent) {
 
     // --- ADD TO LAYOUT ---
     contentLayout->addWidget(lblTitle);
-    contentLayout->addSpacing(10); // Khoảng cách nhỏ dưới tiêu đề
+    contentLayout->addSpacing(10);
     contentLayout->addWidget(txtUser);
     contentLayout->addWidget(txtPass);
     contentLayout->addWidget(txtConfirm);
-    contentLayout->addSpacing(10); // Khoảng cách trước nút bấm
+    contentLayout->addSpacing(10); 
     contentLayout->addWidget(btnSubmit);
     contentLayout->addWidget(btnBack);
     contentLayout->setAlignment(Qt::AlignCenter);
 
     overlayLayout->addWidget(loginContainer);
-    mainLayout->setColumnStretch(0, 6); // Bên trái chiếm 4 phần (Rộng hơn)
+    mainLayout->setColumnStretch(0, 6); 
     mainLayout->setColumnStretch(1, 5);
 
      mainLayout->addWidget(rightOverlay, 0, 1);
