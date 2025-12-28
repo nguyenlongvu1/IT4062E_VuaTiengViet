@@ -6,6 +6,7 @@
 #include <QStackedWidget>
 #include <QLabel>
 #include <QMessageBox>
+#include <QTimer>
 #include "../ui/room/FriendRoomWidget.h"
 
 MainWindow::MainWindow(QWidget *parent)
@@ -52,6 +53,14 @@ MainWindow::MainWindow(QWidget *parent)
     connect(&GameClient::instance(), &GameClient::disconnected, [=](){
        // Có thể hiện popup báo mất kết nối tại đây
     });
+    // TỰ ĐỘNG KẾT NỐI VÀ LOGIN LUÔN
+    QTimer::singleShot(500, [=](){
+        if (!GameClient::instance().isConnected()) {
+            GameClient::instance().connectToServer("127.0.0.1", 12345);
+        }
+    });
+
+   
 
     
 }

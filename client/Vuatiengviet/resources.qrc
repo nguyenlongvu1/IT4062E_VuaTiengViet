@@ -3,6 +3,7 @@
         <file alias="style.qss">resources/styles/style.qss</file>
         <file alias="bgLogin.png">resources/images/bgLogin.png</file>
         <file alias="bgHome.png">resources/images/bgHome.png</file>
+        <file alias="bgHome(3).png">resources/images/bgHome(3).png</file>
         <file alias="friends.png">resources/images/friends.png</file>
         <file alias="logout.png">resources/images/logout.png</file>
         <file alias="findRank.png">resources/images/findRank.png</file>
@@ -12,5 +13,25 @@
         <file alias="search.png">resources/images/search.png</file>
         <file alias="setting.png">resources/images/setting.png</file>
         <file alias="history.png">resources/images/history.png</file>
+        <file alias="top1.png">resources/images/top1.png</file>
+        <file alias="top2.png">resources/images/top2.png</file>
+        <file alias="top3.png">resources/images/top3.png</file>
+        <file alias="banner.png">resources/images/banner.png</file>
+       <file alias="Nunito-Black.ttf">resources/fonts/Nunito/static/Nunito-Black.ttf</file>
+        <file alias="Nunito-BlackItalic.ttf">resources/fonts/Nunito/static/Nunito-BlackItalic.ttf</file>
+        <file alias="Nunito-Bold.ttf">resources/fonts/Nunito/static/Nunito-Bold.ttf</file>
+        <file alias="Nunito-BoldItalic.ttf">resources/fonts/Nunito/static/Nunito-BoldItalic.ttf</file>
+        <file alias="Nunito-ExtraBold.ttf">resources/fonts/Nunito/static/Nunito-ExtraBold.ttf</file>
+        <file alias="Nunito-ExtraBoldItalic.ttf">resources/fonts/Nunito/static/Nunito-ExtraBoldItalic.ttf</file>
+        <file alias="Nunito-ExtraLight.ttf">resources/fonts/Nunito/static/Nunito-ExtraLight.ttf</file>
+        <file alias="Nunito-ExtraLightItalic.ttf">resources/fonts/Nunito/static/Nunito-ExtraLightItalic.ttf</file>
+        <file alias="Nunito-Italic.ttf">resources/fonts/Nunito/static/Nunito-Italic.ttf</file>
+        <file alias="Nunito-Light.ttf">resources/fonts/Nunito/static/Nunito-Light.ttf</file>
+        <file alias="Nunito-LightItalic.ttf">resources/fonts/Nunito/static/Nunito-LightItalic.ttf</file>
+        <file alias="Nunito-Medium.ttf">resources/fonts/Nunito/static/Nunito-Medium.ttf</file>
+        <file alias="Nunito-MediumItalic.ttf">resources/fonts/Nunito/static/Nunito-MediumItalic.ttf</file>
+        <file alias="Nunito-Regular.ttf">resources/fonts/Nunito/static/Nunito-Regular.ttf</file>
+        <file alias="Nunito-SemiBold.ttf">resources/fonts/Nunito/static/Nunito-SemiBold.ttf</file>
+        <file alias="Nunito-SemiBoldItalic.ttf">resources/fonts/Nunito/static/Nunito-SemiBoldItalic.ttf</file>
     </qresource>
 </RCC>

@@ -12,7 +12,6 @@ public:
     static std::string getUsername(int userId);
     static Message searchUsers(const Message& msg);
     static Message getLeaderboard(const Message& msg);
-    
 
 private:
     // Rate limiting constants

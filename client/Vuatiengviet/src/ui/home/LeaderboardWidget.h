@@ -15,6 +15,7 @@ public slots:
 
 private:
     QListWidget *listRank;
+    QWidget* createRankItemWidget(const RankItem &data, int index);
     void setupUi();
 };
 

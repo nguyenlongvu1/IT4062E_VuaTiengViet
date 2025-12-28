@@ -25,6 +25,7 @@ void ClientHandler::run() {
 
         Message response = Dispatcher::handleCommand(parsed, this);
 
+        // 3. XỬ LÝ CÁC TRẠNG THÁI SERVER (Login/Logout)
         if (response.command == "LOGIN_OK" && response.params.count("user_id")) {
             int uid = std::stoi(response.params.at("user_id"));
             setUserId(uid);

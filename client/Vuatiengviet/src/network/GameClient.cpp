@@ -179,6 +179,15 @@ else if (response.contains("COMMAND: FRIEND_LIST_RES")) {
     }
     emit friendListReceived(friends);
 }
+else if (response.contains("COMMAND: UPDATE_STATUS_NOTIFY")) {
+             QString username = getPayloadValue("username");
+             QString status = getPayloadValue("status"); 
+             
+             qDebug() << "[NOTIFY] Friend Status Update:" << username << " -> " << status;
+             
+             // Phát tín hiệu sang UI
+             emit friendStatusChanged(username, status);
+        }
 
         // --- CASE 5: LỜI MỜI KẾT BẠN & PENDING ---
         else if (response.contains("COMMAND: NOTIFY_FRIEND_REQ")) {
@@ -370,4 +379,4 @@ void GameClient::sendStartGame(int roomId) {
     qDebug() << "[CLIENT] Host dang bat dau tran dau cho Room ID:" << roomId;
     QString payload = QString("room_id=%1").arg(roomId);
     sendMessage("CREATE_MATCH", payload); 
-}
+};

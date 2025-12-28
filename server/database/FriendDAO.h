@@ -27,4 +27,5 @@ public:
     // Check if friend request already exists
     static bool requestExists(int from_user_id, int to_user_id);
     static std::vector<UserDAO::UserSearchInfo> getFriends(int userId);
+    static std::vector<std::string> getFriendList(const std::string& username);
 };

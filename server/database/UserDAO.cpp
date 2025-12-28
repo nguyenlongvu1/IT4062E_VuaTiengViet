@@ -397,8 +397,9 @@ std::string UserDAO::getRankName(int points) {
     return rankName;
 }
 
-
-// LẤY ĐIỂM HIỆN TẠI
+// =========================================================
+// HÀM 3: LẤY ĐIỂM HIỆN TẠI
+// =========================================================
 int UserDAO::getPoints(int userId) {
     sqlite3* db = DB::getHandle();
     std::string sql = "SELECT total_points FROM Users WHERE user_id = ?;";
@@ -418,18 +419,19 @@ int UserDAO::getPoints(int userId) {
 std::vector<UserDAO::LeaderboardInfo> UserDAO::getLeaderboard(int limit) {
     std::vector<UserDAO::LeaderboardInfo> list;
     sqlite3* db = DB::getHandle();
-
+    
+    // Câu lệnh SQL lấy Top user giảm dần theo điểm
     std::string sql = "SELECT username, total_points FROM Users ORDER BY total_points DESC LIMIT ?;";
     
     sqlite3_stmt* stmt;
     if (sqlite3_prepare_v2(db, sql.c_str(), -1, &stmt, nullptr) != SQLITE_OK) {
-        return list; 
+        return list; // Trả về list rỗng nếu lỗi
     }
 
     sqlite3_bind_int(stmt, 1, limit);
 
     while (sqlite3_step(stmt) == SQLITE_ROW) {
-        UserDAO::LeaderboardInfo info; 
+        UserDAO::LeaderboardInfo info; // Khai báo biến info
         
         // Cột 0: username
         const unsigned char* nameText = sqlite3_column_text(stmt, 0);

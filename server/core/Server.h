@@ -31,4 +31,5 @@ public:
     void sendToUsers(const std::vector<int>& userIds, const std::string& msg);
     bool isUserOnline(int userId);
     static Server* getInstance();
+    static ClientHandler* findClient(const std::string& username);
 };

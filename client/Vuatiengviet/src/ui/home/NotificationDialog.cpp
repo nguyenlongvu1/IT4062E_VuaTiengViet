@@ -1,5 +1,5 @@
 #include "NotificationDialog.h"
-#include "../../network/GameClient.h" // [QUAN TRỌNG] Include để gọi lệnh gửi đi
+#include "../../network/GameClient.h" 
 #include <QVBoxLayout>
 #include <QHBoxLayout>
 #include <QLabel>

@@ -4,7 +4,9 @@
 #include <iostream>
 #include "../utils/Crypto.h"
 #include <regex>
-
+#include "../database/FriendDAO.h"
+#include "../core/Server.h"
+#include "../core/ClientHandler.h"
 // Helper: Unified error response
 Message UserService::createErrorResponse(const std::string& errorCode, const std::string& errorMsg) {
     Message resp;
@@ -100,6 +102,13 @@ Message UserService::login(const Message &msg) {
 Message UserService::logout(const Message &msg) {
     Message resp;
     resp.command = "LOGOUT_OK";
+    std::string username = "";
+    if (msg.params.count("user_id")) {
+        username = msg.params.at("user_id");
+    }
+
+ 
+    
 
     // 1. Ưu tiên logout bằng User ID (Do ClientHandler inject vào)
     if (msg.params.count("user_id") > 0) {

@@ -80,6 +80,7 @@ signals:
     void matchStartedDirectly(QString matchId, QString roomId);
     void userInfoReceived(const QString& username, int points, const QString& rankName);
     void leaderboardReceived(const QList<RankItem> &items);
+   void friendStatusChanged(const QString& username, const QString& status);
     
     
 

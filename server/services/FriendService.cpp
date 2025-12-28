@@ -150,6 +150,7 @@ Message FriendService::listFriends(const Message& msg) {
     return resp;
 }
 
+// ==========================================================
 // 5. LẤY DANH SÁCH LỜI MỜI ĐANG CHỜ
 Message FriendService::listPendingRequests(const Message& msg) {
     Message resp;
@@ -158,6 +159,7 @@ Message FriendService::listPendingRequests(const Message& msg) {
     if (!msg.params.count("user_id")) return resp;
     int myId = std::stoi(msg.params.at("user_id"));
 
+    // Lấy danh sách ID
     std::vector<int> pendingIds = FriendDAO::getPendingRequests(myId);
     
     std::string listStr = "";

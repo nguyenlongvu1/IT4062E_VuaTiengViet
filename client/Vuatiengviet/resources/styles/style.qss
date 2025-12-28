@@ -2,7 +2,7 @@
 QWidget {
     background-color: #2c3e50;
     color: white;
-    font-family: "Segoe UI", sans-serif;
+    font-family: "Nunito";
     font-size: 14px;
 }
 #LoginScreen {
@@ -135,11 +135,12 @@ QMessageBox QPushButton:pressed {
 }
 
 
+
+
 /* --- MÀN HÌNH HOME --- */
 #HomeScreen {
-    border-image: url(:/bgHome.png) 0 0 0 0 stretch stretch;
-}
-
+    border-image: url(:/bgHome(3).png) 0 0 0 0 stretch stretch;
+} 
 /* 1. Profile Card (Góc Trái) */
 #ProfileFrame {
     background-color: rgba(0, 0, 0, 0.6); /* Đen mờ */
@@ -195,43 +196,6 @@ QToolButton {
     border-radius: 10px;
     border: none;
     padding: 10px;
-}
-
-/* Nút Rank (Màu Cam) */
-#BtnMode_Rank {
-    background-color: #e67e22; /* Carrot Orange */
-    border-bottom: 8px solid #d35400; /* Hiệu ứng 3D đáy */
-    padding-top: 25px;
-    padding-bottom: 17px;
-}
-#BtnMode_Rank:hover {
-    background-color: #f39c12;
-    margin-top: 2px; /* Hiệu ứng nhấn */
-    border-bottom: 6px solid #d35400;
-}
-#BtnMode_Rank:pressed {
-    background-color: #d35400;
-    margin-top: 8px;
-    border-bottom: none;
-}
-
-/* Nút Friend (Màu Xanh Lá) */
-#BtnMode_Friend {
-    background-color: #2ecc71; /* Emerald Green */
-    border-bottom: 8px solid #27ae60;
-
-    padding-top: 35px;
-    padding-bottom: 0px;
-}
-#BtnMode_Friend:hover {
-    background-color: #4cd137;
-    margin-top: 2px;
-    border-bottom: 6px solid #27ae60;
-}
-#BtnMode_Friend:pressed {
-    background-color: #27ae60;
-    margin-top: 8px;
-    border-bottom: none;
 }
 
 /* 3. MENU DƯỚI (Nút nhỏ) */

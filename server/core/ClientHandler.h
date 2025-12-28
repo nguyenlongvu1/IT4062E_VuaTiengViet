@@ -10,6 +10,7 @@ private:
     bool running = true;
     int user_id = 0; // 0 indicates not logged-in
     void performCleanup();
+    
 
 public:
     ClientHandler(int fd, Server* server);

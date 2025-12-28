@@ -37,6 +37,12 @@ private:
     QListWidget *listRecent;  // Danh sách gần đây
     void onFriendListUpdated();
     
+    
+    // Nút Tab tùy chỉnh
+    QPushButton *btnTabFriend;
+    QPushButton *btnTabRecent;
+    QStringList m_friendCache;
+    
 };
 
 #endif // SOCIALWIDGET_H

@@ -5,8 +5,8 @@
 #include "../services/MatchmakingService.h"
 #include "../services/GameService.h"
 #include "../services/RematchService.h"
-#include "../services/MatchService.h"
 #include <iostream>
+#include "../services/MatchService.h"
 
 Message Dispatcher::handleCommand(const Message& msg, ClientHandler*) {
     Message resp;
