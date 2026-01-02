@@ -1,9 +1,12 @@
 <RCC>
     <qresource prefix="/">
+        <file alias="bgMusic.ogg">resources/sounds/bgMusic.ogg</file>
+        <file alias="clickSound.wav">resources/sounds/clickSound.wav</file>
         <file alias="style.qss">resources/styles/style.qss</file>
         <file alias="bgLogin.png">resources/images/bgLogin.png</file>
         <file alias="bgHome.png">resources/images/bgHome.png</file>
         <file alias="bgHome(3).png">resources/images/bgHome(3).png</file>
+        <file alias="bgHome(1).gif">resources/images/bgHome(1).gif</file>
         <file alias="friends.png">resources/images/friends.png</file>
         <file alias="logout.png">resources/images/logout.png</file>
         <file alias="findRank.png">resources/images/findRank.png</file>

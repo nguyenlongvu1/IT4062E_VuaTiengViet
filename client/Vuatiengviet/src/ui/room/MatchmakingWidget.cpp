@@ -3,43 +3,52 @@
 #include <QLabel>
 #include <QPushButton>
 #include <QTimer>
+#include <QMovie>
 #include <QDebug>
+#include <QResizeEvent>
 #include "../../network/GameClient.h" 
 
 MatchmakingWidget::MatchmakingWidget(QWidget *parent) : QWidget(parent) {
+     this->setAttribute(Qt::WA_StyledBackground, true);
     setupUi();
     
     // Timer cập nhật text (...)
     statusTimer = new QTimer(this);
     connect(statusTimer, &QTimer::timeout, this, &MatchmakingWidget::updateStatusText);
 }
-
+void MatchmakingWidget::resizeEvent(QResizeEvent *event) {
+    if (m_backgroundLabel) {
+        m_backgroundLabel->resize(this->size());
+    }
+    QWidget::resizeEvent(event); // Gọi hàm gốc
+}
 void MatchmakingWidget::setupUi() {
     this->setObjectName("MatchmakingScreen"); 
-    
+    m_backgroundLabel = new QLabel(this);
+    m_backgroundMovie = new QMovie(":/bgHome(1).gif");
+
+    if (m_backgroundMovie->isValid()) {
+        m_backgroundLabel->setMovie(m_backgroundMovie);
+        m_backgroundLabel->setScaledContents(true); // Cho phép ảnh co giãn
+        m_backgroundMovie->start(); // Bắt đầu chạy động
+    }
+
+    // Đưa label nền xuống dưới cùng để không che mất các nút khác
+    m_backgroundLabel->lower(); 
+    // Resize ngay lập tức cho khớp kích thước hiện tại
+    m_backgroundLabel->resize(this->size());
+
     QVBoxLayout *layout = new QVBoxLayout(this);
     layout->setAlignment(Qt::AlignCenter);
     layout->setSpacing(30);
+    layout->setContentsMargins(0, 0, 0, 0);
 
-    // 1. Radar Animation
-    lblRadar = new QLabel(this);
-    lblRadar->setObjectName("RadarLabel");
-    lblRadar->setFixedSize(200, 200);
-    lblRadar->setAlignment(Qt::AlignCenter);
     
-    QPixmap pix(":/images/radar.png"); 
-    if(!pix.isNull()) {
-        lblRadar->setPixmap(pix.scaled(200, 200, Qt::KeepAspectRatio, Qt::SmoothTransformation));
-    } else {
-        lblRadar->setText("RADAR");
-        lblRadar->setStyleSheet("font-size: 20px; font-weight: bold; color: white; border: 2px solid white; border-radius: 100px;");
-    }
-
     // 2. Trạng thái text
     lblStatus = new QLabel("Đang quét máy chủ...", this);
     lblStatus->setObjectName("MatchStatusLabel");
     lblStatus->setAlignment(Qt::AlignCenter);
-    lblStatus->setStyleSheet("font-size: 16px; color: white;");
+    lblStatus->setStyleSheet("font-size: 16px; color: white; background: transparent");
 
     // 3. Nút Hủy
     QPushButton *btnCancel = new QPushButton("Hủy Tìm Trận", this);
@@ -47,10 +56,11 @@ void MatchmakingWidget::setupUi() {
     btnCancel->setFixedSize(200, 50);
     btnCancel->setCursor(Qt::PointingHandCursor);
 
-    layout->addWidget(lblRadar, 0, Qt::AlignCenter);
+    layout->addStretch();
     layout->addWidget(lblStatus, 0, Qt::AlignCenter);
-    layout->addSpacing(20);
+    layout->addSpacing(10);
     layout->addWidget(btnCancel, 0, Qt::AlignCenter);
+    layout->addSpacing(40);
 
     // KẾT NỐI NÚT HỦY VỚI HÀM cancelSearch
     connect(btnCancel, &QPushButton::clicked, this, &MatchmakingWidget::cancelSearch);

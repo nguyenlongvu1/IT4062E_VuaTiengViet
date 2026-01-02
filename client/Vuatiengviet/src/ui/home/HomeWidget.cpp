@@ -6,13 +6,14 @@
 #include <QPushButton>
 #include <QFrame>
 #include <QGraphicsDropShadowEffect>
-#include <QToolButton>
+// #include <GameButton>
 #include "SettingsDialog.h"
 #include "ProfileDialog.h"
 #include "../room/MatchmakingWidget.h"
 #include "../room/FriendRoomWidget.h"
 #include "NotificationDialog.h"
 #include <QMessageBox>
+#include "../../utils/GameButton.h"
 
 HomeWidget::HomeWidget(QWidget *parent) : QWidget(parent) {
     this->setObjectName("HomeScreen");
@@ -37,7 +38,7 @@ void HomeWidget::setupUi() {
         "   outline: none;"
         "}"
         "QAbstractButton:hover { background: qlineargradient(x1:0, y1:0, x2:0, y2:1, stop:0 rgba(70, 70, 100, 0.95), stop:1 rgba(40, 40, 60, 0.98)); border: 1px solid rgba(255, 255, 255, 0.3); border-radius: 40px; }"
-        "QAbstractButton:pressed { background: rgba(10, 10, 20, 0.6); border-radius: 40px; margin-top: 2px; }";
+        "QAbstractButton:pressed { background: rgba(10, 10, 20, 0.6); border-radius: 40px !important; margin-top: 2px; }";
 
     auto addShadow = [](QWidget* w) {
         QGraphicsDropShadowEffect *shadow = new QGraphicsDropShadowEffect(w);
@@ -193,7 +194,7 @@ void HomeWidget::setupUi() {
     // ======================================================
     // 1. KHỞI TẠO NÚT RANK (Dùng biến thành viên btnRank)
     // ======================================================
-    btnRank = new QToolButton(this); // Gán vào biến thành viên
+    btnRank = new GameButton(this); // Gán vào biến thành viên
     btnRank->setObjectName("BtnMode_Rank");
     btnRank->setFixedSize(500, 130);
     btnRank->setCursor(Qt::PointingHandCursor);
@@ -253,7 +254,7 @@ void HomeWidget::setupUi() {
     // ======================================================
     // 2. KHỞI TẠO NÚT FRIEND (Dùng biến thành viên btnFriend)
     // ======================================================
-    btnFriend = new QToolButton(this);
+    btnFriend = new GameButton(this);
     btnFriend->setObjectName("BtnMode_Friend");
     btnFriend->setFixedSize(500, 130);
     btnFriend->setCursor(Qt::PointingHandCursor);
@@ -374,7 +375,7 @@ void HomeWidget::setupUi() {
     topButtonsLayout->setSpacing(5);
 
     auto createMenuBtn = [&](QString iconPath, QString tooltip) {
-        QToolButton* btn = new QToolButton(this);
+        GameButton* btn = new GameButton(this);
         btn->setFixedSize(80, 80);
         btn->setIcon(QIcon(iconPath));
         btn->setIconSize(QSize(40, 40));
@@ -385,15 +386,15 @@ void HomeWidget::setupUi() {
         return btn;
     };
 
-    QToolButton* btnHistory = createMenuBtn(":/history.png", "Lịch sử đấu");
-    QToolButton* btnSettings = createMenuBtn(":/setting.png", "Cài đặt");
-    btnInbox = new QPushButton(this); // Cần QPushButton cho logic notify
+    GameButton* btnHistory = createMenuBtn(":/history.png", "Lịch sử đấu");
+    GameButton* btnSettings = createMenuBtn(":/setting.png", "Cài đặt");
+    btnInbox = new GameButton(this); // Cần GameButtoncho logic notify
     btnInbox->setFixedSize(80, 80);
     btnInbox->setIcon(QIcon(":/noti.png"));
     btnInbox->setIconSize(QSize(36, 36));
     btnInbox->setStyleSheet(circleBtnStyle);
     addShadow(btnInbox);
-    QPushButton* btnLogout = new QPushButton(this);
+    GameButton* btnLogout = new GameButton(this);
     btnLogout->setFixedSize(80, 80);
     btnLogout->setIcon(QIcon(":/logout.png"));
     btnLogout->setIconSize(QSize(32, 32));
@@ -422,12 +423,12 @@ void HomeWidget::setupUi() {
     mainLayout->addLayout(columnsLayout);
 
     // KẾT NỐI
-    connect(btnInbox, &QPushButton::clicked, this, &HomeWidget::openInbox);
-    connect(btnLogout, &QPushButton::clicked, this, &HomeWidget::logout);
-    connect(btnRank, &QToolButton::clicked, this, &HomeWidget::playRanked);
-    connect(btnFriend, &QToolButton::clicked, this, &HomeWidget::playWithFriend);
-    connect(btnSettings, &QToolButton::clicked, this, &HomeWidget::openSettings);
-    connect(btnHistory, &QToolButton::clicked, this, &HomeWidget::openHistory);
+    connect(btnInbox, &GameButton::clicked, this, &HomeWidget::openInbox);
+    connect(btnLogout, &GameButton::clicked, this, &HomeWidget::logout);
+    connect(btnRank, &GameButton::clicked, this, &HomeWidget::playRanked);
+    connect(btnFriend, &GameButton::clicked, this, &HomeWidget::playWithFriend);
+    connect(btnSettings, &GameButton::clicked, this, &HomeWidget::openSettings);
+    connect(btnHistory, &GameButton::clicked, this, &HomeWidget::openHistory);
 
     // Friend Notify logic
     connect(&GameClient::instance(), &GameClient::friendRequestReceived, [=](const QString &senderName){
@@ -572,6 +573,7 @@ void HomeWidget::playRanked() {
     
     QVBoxLayout *layout = new QVBoxLayout(m_radarDialog);
     MatchmakingWidget *matchWidget = new MatchmakingWidget(m_radarDialog);
+    layout->setContentsMargins(0, 0, 0, 0);
     layout->addWidget(matchWidget);
 
     // Kết nối Signal: Khi Server gửi START_MATCH về

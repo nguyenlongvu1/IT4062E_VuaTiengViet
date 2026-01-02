@@ -12,7 +12,7 @@ class QLabel;
 class QPushButton;
 class QVBoxLayout;
 class QHBoxLayout;
-class QToolButton;
+class GameButton;
 class NotificationDialog;
 class HomeWidget : public QWidget {
     Q_OBJECT
@@ -41,8 +41,8 @@ private:
     QLabel *lblUsername;
     QLabel *lblRank;
 
-    QToolButton *btnRank;
-    QToolButton *btnFriend;
+    GameButton *btnRank;
+    GameButton *btnFriend;
     LeaderboardWidget *leaderboardWidget; 
     SocialWidget *socialWidget;
     void openSettings();
@@ -56,7 +56,7 @@ private:
     QString m_currentUsername;
     int m_currentScore;
     QString m_currentRankName;
-    QPushButton *btnInbox;
+    GameButton*btnInbox;
     NotificationDialog *m_notifyDialog = nullptr;
     void joinRankedRoom(const QString& roomId);
     bool m_isProcessingMatch = false;

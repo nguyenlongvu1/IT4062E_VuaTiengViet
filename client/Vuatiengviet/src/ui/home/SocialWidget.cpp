@@ -5,7 +5,7 @@
 #include <QLabel>
 #include <QListWidgetItem>
 #include <QLineEdit>
-#include <QPushButton>
+#include <../../utils/GameButton.h>
 #include <QStackedWidget>
 #include <QFrame>
 #include <QDebug>
@@ -143,7 +143,7 @@ void SocialWidget::setupUi() {
     searchLayout->setContentsMargins(5, 0, 15, 0);
     searchLayout->setSpacing(0);
     
-    QPushButton *iconSearch = new QPushButton(glassPanel);
+    GameButton *iconSearch = new GameButton(glassPanel);
     iconSearch->setIcon(QIcon(":/search.png")); 
     iconSearch->setFixedSize(35, 35);
     iconSearch->setIconSize(QSize(25, 25));
@@ -164,14 +164,14 @@ void SocialWidget::setupUi() {
     tabContainer->setStyleSheet(" border-radius: 10px; background-color: rgba(255, 255, 255, 0.22);");
     tabLayout->setContentsMargins(3, 3, 3, 3); tabLayout->setSpacing(10);
 
-    btnTabFriend = new QPushButton("Bạn Bè", glassPanel);
-    btnTabRecent = new QPushButton("Gần Đây", glassPanel);
+    btnTabFriend = new GameButton("Bạn Bè", glassPanel);
+    btnTabRecent = new GameButton("Gần Đây", glassPanel);
     btnTabFriend->setFixedHeight(38);
     btnTabRecent->setFixedHeight(38);
     btnTabFriend->setCursor(Qt::PointingHandCursor);
 
     QString tabActive = 
-        "QPushButton {"
+        "GameButton {"
         "   background: qradialgradient("
         "       cx:0.5, cy:0.5, radius: 0.8, fx:0.5, fy:0.5,"
         "       stop:0    rgba(255, 255, 255, 0)," 
@@ -189,14 +189,14 @@ void SocialWidget::setupUi() {
         "}";
 
     QString tabInactive = 
-        "QPushButton {"
+        "GameButton {"
         "   background: transparent;"
         "   color: #bdc3c7;"
         "   border: none;"
         "   font-weight: 500;"
         "   font-size: 18px;"
         "}"
-        "QPushButton:hover { color: white; background-color: rgba(255,255,255,0.05); border-radius: 19px; }";
+        "GameButton:hover { color: white; background-color: rgba(255,255,255,0.05); border-radius: 19px; }";
 
     btnTabFriend->setStyleSheet(tabActive);
     btnTabRecent->setStyleSheet(tabInactive);
@@ -232,13 +232,13 @@ void SocialWidget::setupUi() {
     mainLayout->addWidget(stackedWidget);
 
     // --- LOGIC EVENTS (Giữ nguyên) ---
-    connect(btnTabFriend, &QPushButton::clicked, [=](){
+    connect(btnTabFriend, &GameButton::clicked, [=](){
         stackedWidget->setCurrentIndex(0);
         btnTabFriend->setStyleSheet(tabActive);
         btnTabRecent->setStyleSheet(tabInactive);
     });
 
-    connect(btnTabRecent, &QPushButton::clicked, [=](){
+    connect(btnTabRecent, &GameButton::clicked, [=](){
         stackedWidget->setCurrentIndex(1);
         btnTabFriend->setStyleSheet(tabInactive);
         btnTabRecent->setStyleSheet(tabActive);
@@ -250,7 +250,7 @@ void SocialWidget::setupUi() {
        if (text.isEmpty()) reloadFriendList();
     });
     connect(txtSearch, &QLineEdit::returnPressed, this, &SocialWidget::onSearchFriend);
-    connect(iconSearch, &QPushButton::clicked, this, &SocialWidget::onSearchFriend);
+    connect(iconSearch, &GameButton::clicked, this, &SocialWidget::onSearchFriend);
 
     // Tín hiệu từ Server
     connect(&GameClient::instance(), &GameClient::searchResultReceived, 
@@ -427,13 +427,13 @@ void SocialWidget::addSearchResultItem(const UserSearchResult& user) {
     
     if (!user.isFriend) {
         // --- TRƯỜNG HỢP 1: NGƯỜI LẠ -> HIỆN NÚT THÊM BẠN ---
-        QPushButton *btnAdd = new QPushButton("+");
+        GameButton *btnAdd = new GameButton("+");
         btnAdd->setFixedSize(36, 36);
         btnAdd->setCursor(Qt::PointingHandCursor);
         
         // Style Neon Xanh lá
         btnAdd->setStyleSheet(
-            "QPushButton {"
+            "GameButton {"
             "   background-color: rgba(46, 204, 113, 0.15);" 
             "   color: #2ecc71;"
             "   border: 1px solid #2ecc71;"
@@ -442,17 +442,17 @@ void SocialWidget::addSearchResultItem(const UserSearchResult& user) {
             "   font-size: 22px;"
             "   padding-bottom: 4px;"
             "}"
-            "QPushButton:hover {"
+            "GameButton:hover {"
             "   background-color: #2ecc71;"
             "   color: white;"
             "}"
-            "QPushButton:pressed {"
+            "GameButton:pressed {"
             "   background-color: #27ae60;"
             "}"
         );
 
         // Logic gửi lời mời
-        connect(btnAdd, &QPushButton::clicked, [=]() {
+        connect(btnAdd, &GameButton::clicked, [=]() {
             GameClient::instance().sendAddFriendRequest(user.username);
             btnAdd->setText("✓"); // Đổi thành dấu tích
             btnAdd->setEnabled(false); // Khóa nút

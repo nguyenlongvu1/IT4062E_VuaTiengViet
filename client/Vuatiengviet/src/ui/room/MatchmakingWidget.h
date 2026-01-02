@@ -2,6 +2,8 @@
 #define MATCHMAKINGWIDGET_H
 
 #include <QWidget>
+#include <QMovie>
+#include <QLabel>
 
 class QLabel;
 class QTimer;
@@ -36,6 +38,10 @@ private:
     int dotCount; 
     bool handledMatchFound = false;
     void setupUi();
+    QLabel *m_backgroundLabel;
+    QMovie *m_backgroundMovie;
+protected:
+    void resizeEvent(QResizeEvent *event) override;
 };
 
 #endif // MATCHMAKINGWIDGET_H

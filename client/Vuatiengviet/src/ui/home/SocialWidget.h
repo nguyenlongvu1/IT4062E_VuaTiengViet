@@ -4,11 +4,11 @@
 #include <QWidget>
 #include <QListWidget>
 #include <QLineEdit>
-#include <QPushButton>
+#include <../../utils/GameButton.h>
 #include "../../network/GameClient.h" 
 #include <QApplication>
 
-
+class GameButton;
 class SocialWidget : public QWidget {
     Q_OBJECT
 public:
@@ -31,7 +31,7 @@ private:
   
 
     QLineEdit *txtSearch;
-    QPushButton *btnSearch;
+    GameButton *btnSearch;
     
     QListWidget *listFriends; // Danh sách bạn bè
     QListWidget *listRecent;  // Danh sách gần đây
@@ -39,8 +39,8 @@ private:
     
     
     // Nút Tab tùy chỉnh
-    QPushButton *btnTabFriend;
-    QPushButton *btnTabRecent;
+    GameButton *btnTabFriend;
+    GameButton *btnTabRecent;
     QStringList m_friendCache;
     
 };

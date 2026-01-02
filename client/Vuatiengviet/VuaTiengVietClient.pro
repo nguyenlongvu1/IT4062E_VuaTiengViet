@@ -1,4 +1,4 @@
-QT       += core gui network widgets
+QT       += core gui network widgets multimedia
 
 TARGET = VuaTiengVietClient
 TEMPLATE = app
@@ -30,7 +30,9 @@ HEADERS += \
     src/ui/home/ProfileDialog.h \
     src/ui/room/MatchmakingWidget.h \
     src/ui/room/FriendRoomWidget.h \
-    src/ui/home/NotificationDialog.h
+    src/ui/home/NotificationDialog.h \
+    src/utils/AudioManager.h \
+    src/utils/GameButton.h
     
 
 # Định nghĩa các file Source
@@ -47,10 +49,13 @@ SOURCES += \
     src/ui/home/ProfileDialog.cpp \
     src/ui/room/MatchmakingWidget.cpp \
     src/ui/room/FriendRoomWidget.cpp \
-    src/ui/home/NotificationDialog.cpp
+    src/ui/home/NotificationDialog.cpp \
+    src/utils/AudioManager.cpp \
+    src/utils/GameButton.cpp
 
 # Tài nguyên (Nếu có file resources.qrc)
 # RESOURCES += resources.qrc
 
 RESOURCES += \
     resources.qrc
+ LIBS += -lSDL2 -lSDL2_mixer

@@ -5,9 +5,17 @@
 #include <stdio.h>
 #include <QFontDatabase>
 #include <QDirIterator> 
+#include "utils/AudioManager.h"
+#include <QDebug>
 
 int main(int argc, char *argv[]) {
+    qputenv("SDL_AUDIODRIVER", "pulseaudio");
+    qputenv("PULSE_SERVER", "unix:/mnt/wslg/PulseServer");
+    qputenv("PULSE_LATENCY_MSEC", "30");
+    // qputenv("PULSE_LATENCY_MSEC", "60");
     QApplication a(argc, argv);
+
+   
 
     int idBold = QFontDatabase::addApplicationFont(":/Nunito-Bold.ttf");
     int idRegular = QFontDatabase::addApplicationFont(":/Nunito-Regular.ttf");

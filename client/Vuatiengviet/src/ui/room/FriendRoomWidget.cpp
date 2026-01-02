@@ -2,28 +2,120 @@
 #include <QVBoxLayout>
 #include <QHBoxLayout>
 #include <QLabel>
-#include <QPushButton>
+// #include <GameButton>
 #include <QFrame>
 #include <QInputDialog>
 #include <QMessageBox>
 #include <QDebug>
+#include <QGraphicsDropShadowEffect> 
 #include "../../network/GameClient.h"
+#include "../../utils/GameButton.h"
 
-FriendRoomWidget::FriendRoomWidget(QString myUsername,bool isHost, QWidget *parent) 
-    : QWidget(parent), m_isHost(isHost) , m_myUsername(myUsername)
+
+FriendRoomWidget::FriendRoomWidget(QString myUsername, bool isHost, QWidget *parent) 
+    : QWidget(parent), m_isHost(isHost), m_myUsername(myUsername)
 {
-    // Khởi tạo con trỏ bằng NULL để tránh lỗi rác bộ nhớ
-    lblUser1 = nullptr;
-    lblUser2 = nullptr; 
-    frameSlot1 = nullptr;
-    frameSlot2 = nullptr;
-
+    // Initialize pointers to nullptr for safety
+    lblUser1 = nullptr; lblUser2 = nullptr; lblUser3 = nullptr;
+    lblAvatar1 = nullptr; lblAvatar2 = nullptr; lblAvatar3 = nullptr;
+    lblStatus1 = nullptr; lblStatus2 = nullptr; lblStatus3 = nullptr;
+    
+    // Store slot widget pointers if you declared them in .h (m_slotWidget1, etc.)
+    // If not declared in .h, we just use local variables or findChild
+    
+    // Important for custom painting/styling on QWidget
+    this->setAttribute(Qt::WA_StyledBackground, true);
     setupUi();
+}
 
+// Helper function to create a styled slot container
+QWidget* FriendRoomWidget::createStyledSlot(int slotIndex) {
+    // Fixed dimensions for each slot
+    int w = 220; 
+    int h = 320;
+
+    // 1. Main Container (Border Widget)
+    QWidget *borderWidget = new QWidget(this);
+    borderWidget->setFixedSize(w, h);
+    
+    // Outer Glow Gradient
+    borderWidget->setStyleSheet(
+        "background: qlineargradient(x1:0, y1:0, x2:1, y2:1," 
+        "   stop:0    rgba(255, 255, 255, 0),"   
+        "   stop:0.5  rgba(255, 255, 255, 0.4)," // Bright border
+        "   stop:1    rgba(255, 255, 255, 0));"
+        "border-radius: 15px;" 
+    );
+
+    // Glow Effect
+    QGraphicsDropShadowEffect *panelShadow = new QGraphicsDropShadowEffect(borderWidget);
+    panelShadow->setBlurRadius(20);
+    panelShadow->setColor(QColor(255, 255, 255, 100)); // Light white glow
+    panelShadow->setOffset(0, 0);
+    borderWidget->setGraphicsEffect(panelShadow);
+
+    // Layout for the border (Margin 2px to show the border gradient)
+    QVBoxLayout *borderLayout = new QVBoxLayout(borderWidget);
+    borderLayout->setContentsMargins(2, 2, 2, 2); 
+
+    // 2. Glass Panel (Background)
+    QWidget *glassPanel = new QWidget(borderWidget);
+    // Assign object name to easily find it later for content updates
+    glassPanel->setObjectName(QString("glassPanel_%1").arg(slotIndex)); 
+    glassPanel->setStyleSheet(
+        "background: qlineargradient(x1:0, y1:0, x2:0, y2:1,"
+        "   stop:0 rgba(50, 50, 80, 0.95),"   
+        "   stop:1 rgba(20, 20, 35, 0.98));"  
+        "border-radius: 13px;" // 15px (outer) - 2px (margin)
+    );
+    borderLayout->addWidget(glassPanel);
+
+    // 3. Neon Vertical Lines
+    int lineH = h - 40; 
+    int lineY = 20;
+
+    // --- Left Line ---
+    QWidget *leftLine = new QWidget(glassPanel);
+    leftLine->setStyleSheet(
+       "background: qlineargradient(x1:0, y1:0, x2:0, y2:1,"
+        "    stop:0    rgba(255, 255, 255, 0),"
+        "    stop:0.5  rgba(255, 255, 255, 1.0),"
+        "    stop:1    rgba(255, 255, 255, 0));"
+    );
+    QGraphicsDropShadowEffect *glowL = new QGraphicsDropShadowEffect(leftLine);
+    glowL->setBlurRadius(15); 
+    glowL->setColor(QColor(0, 255, 255, 200)); 
+    glowL->setOffset(0,0);
+    leftLine->setGraphicsEffect(glowL);
+    leftLine->setGeometry(0, lineY, 2, lineH); 
+
+    // --- Right Line ---
+    QWidget *rightLine = new QWidget(glassPanel);
+    rightLine->setStyleSheet(leftLine->styleSheet());
+    QGraphicsDropShadowEffect *glowR = new QGraphicsDropShadowEffect(rightLine);
+    glowR->setBlurRadius(15); 
+    glowR->setColor(QColor(0, 255, 255, 200)); 
+    glowR->setOffset(0,0);
+    rightLine->setGraphicsEffect(glowR);
+    rightLine->setGeometry(w - 2 - 4, lineY, 2, lineH); // -2 width, -margin
+
+    // 4. Content Layout (Where Avatar/Text will go)
+    QVBoxLayout *contentLayout = new QVBoxLayout(glassPanel);
+    contentLayout->setAlignment(Qt::AlignCenter);
+    contentLayout->setSpacing(10);
+
+    return borderWidget; 
 }
 
 void FriendRoomWidget::setupUi() {
     this->setObjectName("FriendRoomScreen"); 
+    
+    // Background Image
+    this->setStyleSheet(
+        "#FriendRoomScreen {"
+        " border-image: url(:/bgHome.png) 0 0 0 0 stretch stretch; "
+        "}"
+    );
 
     QVBoxLayout *mainLayout = new QVBoxLayout(this);
     mainLayout->setContentsMargins(40, 40, 40, 40);
@@ -31,34 +123,34 @@ void FriendRoomWidget::setupUi() {
 
     // --- HEADER: ROOM ID ---
     lblRoomID = new QLabel("Đang tạo phòng...", this);
-    lblRoomID->setStyleSheet("font-size: 24px; font-weight: bold; color: #f1c40f;");
+    lblRoomID->setStyleSheet("font-size: 30px; font-weight: bold; color: #f1c40f; background: transparent;");
     lblRoomID->setAlignment(Qt::AlignCenter);
 
     // --- BODY: SLOTS AREA ---
     QHBoxLayout *slotsLayout = new QHBoxLayout();
-    slotsLayout->setSpacing(30);
+    slotsLayout->setSpacing(40); // Increased spacing for better look
     slotsLayout->setAlignment(Qt::AlignCenter);
 
-    // === SLOT 1: HOST (Khởi tạo trực tiếp biến thành viên) ===
-    frameSlot1 = new QFrame(this);
-    frameSlot1->setFixedSize(200, 300);
-    frameSlot1->setStyleSheet("border: 2px solid #2ecc71; background-color: rgba(46, 204, 113, 0.1); border-radius: 10px;");
-    
-    QVBoxLayout *layout1 = new QVBoxLayout(frameSlot1);
-    
-    // QLabel *lblAvatar1 = new QLabel("H", frameSlot1); 
-    lblAvatar1 = new QLabel("H", frameSlot1);
-    lblAvatar1->setFixedSize(80, 80);
+    // === SLOT 1: HOST ===
+    // Create the styled container
+    QWidget* slot1Widget = createStyledSlot(1);
+    // Find the internal glass panel to add content to its layout
+    QWidget* glass1 = slot1Widget->findChild<QWidget*>("glassPanel_1");
+    QVBoxLayout* layout1 = qobject_cast<QVBoxLayout*>(glass1->layout());
+
+    // Content for Slot 1
+    lblAvatar1 = new QLabel("H", glass1);
+    lblAvatar1->setFixedSize(90, 90);
     lblAvatar1->setAlignment(Qt::AlignCenter);
-    lblAvatar1->setStyleSheet("background-color: #3498db; color: white; border-radius: 40px; font-weight: bold; font-size: 24px;");
+    lblAvatar1->setStyleSheet("background-color: #3498db; color: white; border-radius: 45px; font-weight: bold; font-size: 28px; border: 2px solid rgba(255,255,255,0.3);");
 
-    lblUser1 = new QLabel("Đang tải...", frameSlot1); 
+    lblUser1 = new QLabel("Đang tải...", glass1); 
     lblUser1->setAlignment(Qt::AlignCenter);
-    lblUser1->setStyleSheet("font-size: 16px; font-weight: bold; color: white;");
+    lblUser1->setStyleSheet("font-size: 18px; font-weight: bold; color: white; background: transparent;");
 
-    lblStatus1 = new QLabel("ĐÃ SẴN SÀNG", frameSlot1);
+    lblStatus1 = new QLabel("ĐÃ SẴN SÀNG", glass1);
     lblStatus1->setAlignment(Qt::AlignCenter);
-    lblStatus1->setStyleSheet("color: #2ecc71; font-style: italic;");
+    lblStatus1->setStyleSheet("color: #2ecc71; font-weight: bold; font-style: italic; background: transparent;");
 
     layout1->addStretch();
     layout1->addWidget(lblAvatar1, 0, Qt::AlignCenter);
@@ -66,27 +158,23 @@ void FriendRoomWidget::setupUi() {
     layout1->addWidget(lblStatus1);
     layout1->addStretch();
 
-    // === SLOT 2: GUEST ===
-    frameSlot2 = new QFrame(this);
-    frameSlot2->setFixedSize(200, 300);
-    frameSlot2->setStyleSheet("border: 1px solid #555; background-color: rgba(0,0,0,0.2); border-radius: 10px;"); 
+    // === SLOT 2: GUEST 1 ===
+    QWidget* slot2Widget = createStyledSlot(2);
+    QWidget* glass2 = slot2Widget->findChild<QWidget*>("glassPanel_2");
+    QVBoxLayout* layout2 = qobject_cast<QVBoxLayout*>(glass2->layout());
 
-    QVBoxLayout *layout2 = new QVBoxLayout(frameSlot2);
-
-    // Avatar slot 2
-    // QLabel *lblAvatar2 = new QLabel("?", frameSlot2);
-    lblAvatar2 = new QLabel("?", frameSlot2);
-    lblAvatar2->setFixedSize(80, 80);
+    lblAvatar2 = new QLabel("?", glass2);
+    lblAvatar2->setFixedSize(90, 90);
     lblAvatar2->setAlignment(Qt::AlignCenter);
-    lblAvatar2->setStyleSheet("background-color: #7f8c8d; color: white; border-radius: 40px; font-weight: bold; font-size: 24px;");
+    lblAvatar2->setStyleSheet("background-color: rgba(255,255,255,0.1); color: gray; border-radius: 45px; font-weight: bold; font-size: 28px; border: 2px dashed rgba(255,255,255,0.2);");
 
-    lblUser2 = new QLabel("Trống", frameSlot2); 
+    lblUser2 = new QLabel("Trống", glass2); 
     lblUser2->setAlignment(Qt::AlignCenter);
-    lblUser2->setStyleSheet("font-size: 16px; color: #bdc3c7;");
+    lblUser2->setStyleSheet("font-size: 16px; color: #bdc3c7; background: transparent;");
 
-    lblStatus2 = new QLabel("Đang chờ...", frameSlot2);
+    lblStatus2 = new QLabel("Đang chờ...", glass2);
     lblStatus2->setAlignment(Qt::AlignCenter);
-    lblStatus2->setStyleSheet("color: #7f8c8d; font-style: italic;");
+    lblStatus2->setStyleSheet("color: gray; font-style: italic; background: transparent;");
 
     layout2->addStretch();
     layout2->addWidget(lblAvatar2, 0, Qt::AlignCenter);
@@ -94,25 +182,23 @@ void FriendRoomWidget::setupUi() {
     layout2->addWidget(lblStatus2);
     layout2->addStretch();
 
-    //SLot 3
-    frameSlot3 = new QFrame(this);
-    frameSlot3->setFixedSize(200, 300);
-    frameSlot3->setStyleSheet("border: 2px solid #2ecc71; background-color: rgba(46, 204, 113, 0.1); border-radius: 10px;");
-    
-    QVBoxLayout *layout3 = new QVBoxLayout(frameSlot3);
-    
-    // QLabel *lblAvatar1 = new QLabel("H", frameSlot1);
-    lblAvatar3 = new QLabel("H", frameSlot3);
-    lblAvatar3->setFixedSize(80, 80);
-    lblAvatar3->setAlignment(Qt::AlignCenter);
-    lblAvatar3->setStyleSheet("background-color: #3498db; color: white; border-radius: 40px; font-weight: bold; font-size: 24px;");
+    // === SLOT 3: GUEST 2 ===
+    QWidget* slot3Widget = createStyledSlot(3);
+    QWidget* glass3 = slot3Widget->findChild<QWidget*>("glassPanel_3");
+    QVBoxLayout* layout3 = qobject_cast<QVBoxLayout*>(glass3->layout());
 
-    lblUser3 = new QLabel("Đang tải...", frameSlot3); 
+    lblAvatar3 = new QLabel("?", glass3);
+    lblAvatar3->setFixedSize(90, 90);
+    lblAvatar3->setAlignment(Qt::AlignCenter);
+    lblAvatar3->setStyleSheet(lblAvatar2->styleSheet()); // Reuse empty style
+
+    lblUser3 = new QLabel("Trống", glass3); 
     lblUser3->setAlignment(Qt::AlignCenter);
-    lblUser3->setStyleSheet("font-size: 16px; font-weight: bold; color: white;");
-    lblStatus3 = new QLabel("ĐÃ SẴN SÀNG", frameSlot3);
+    lblUser3->setStyleSheet(lblUser2->styleSheet());
+
+    lblStatus3 = new QLabel("Đang chờ...", glass3);
     lblStatus3->setAlignment(Qt::AlignCenter);
-    lblStatus3->setStyleSheet("color: #2ecc71; font-style: italic;");
+    lblStatus3->setStyleSheet(lblStatus2->styleSheet());
 
     layout3->addStretch();
     layout3->addWidget(lblAvatar3, 0, Qt::AlignCenter);
@@ -120,27 +206,118 @@ void FriendRoomWidget::setupUi() {
     layout3->addWidget(lblStatus3);
     layout3->addStretch();
 
-    // Thêm 2 slot vào layout ngang
-    slotsLayout->addWidget(frameSlot1);
-    slotsLayout->addWidget(frameSlot2);
-    slotsLayout->addWidget(frameSlot3);
+    // Add slots to main horizontal layout
+    slotsLayout->addWidget(slot1Widget);
+    slotsLayout->addWidget(slot2Widget);
+    slotsLayout->addWidget(slot3Widget);
 
     // --- FOOTER: BUTTONS ---
     QHBoxLayout *btnLayout = new QHBoxLayout();
     
-    // Nút tham gia (Cho khách)
-    QPushButton *btnJoinRoom = new QPushButton("Nhập ID Phòng", this);
-    btnJoinRoom->setFixedSize(150, 50);
-    
-    // Nút Bắt đầu (Cho chủ phòng)
-    btnAction = new QPushButton(m_isHost ? "BẮT ĐẦU" : "SẴN SÀNG", this);
-    btnAction->setFixedSize(200, 60);
-    btnAction->setStyleSheet("background-color: #e67e22; color: white; font-weight: bold; border-radius: 5px;");
+    GameButton*btnJoinRoom = new GameButton("Nhập ID Phòng", this);
+    btnJoinRoom->setObjectName("btnJoinRoom"); // Đặt ID để CSS ăn theo
+    btnJoinRoom->setFixedSize(180, 60);
+    btnJoinRoom->setCursor(Qt::PointingHandCursor);
 
-    // Nút Rời phòng
-    QPushButton *btnLeave = new QPushButton("Rời Phòng", this);
-    btnLeave->setFixedSize(150, 50);
-    btnLeave->setStyleSheet("background-color: #e74c3c; color: white; border-radius: 5px;");
+    // Hiệu ứng Glow Xanh Dương
+    QGraphicsDropShadowEffect *glowJoin = new QGraphicsDropShadowEffect(btnJoinRoom);
+    glowJoin->setBlurRadius(30); 
+    glowJoin->setColor(QColor(52, 152, 219, 180)); // Xanh dương, trong suốt
+    glowJoin->setOffset(0, 0);
+    btnJoinRoom->setGraphicsEffect(glowJoin);
+
+    // Style Gradient Xanh
+    btnJoinRoom->setStyleSheet(
+        "#btnJoinRoom {"
+        "   background-color: qlineargradient(x1:0, y1:0, x2:0, y2:1, stop:0 #3498db, stop:1 #2980b9);"
+        "   border: 2px solid #5dade2;"
+        "   border-radius: 15px;"
+        "   color: white;"
+        "   font-weight: bold;"
+        "   font-size: 18px;"
+        "   font-family: 'Nunito', sans-serif;"
+        "   outline: none;" // Quan trọng: Bỏ viền tím khi focus
+        "}"
+        "#btnJoinRoom:hover {"
+        "   background-color: qlineargradient(x1:0, y1:0, x2:0, y2:1, stop:0 #5dade2, stop:1 #3498db);"
+        "   margin-top: 2px;"
+        "}"
+        "#btnJoinRoom:pressed {"
+        "   background-color: #1a5276;" // Xanh đậm khi nhấn
+        "   margin-top: 4px;"
+        "}"
+    );
+    
+    btnAction = new GameButton(m_isHost ? "BẮT ĐẦU" : "SẴN SÀNG", this);
+    btnAction->setFixedSize(220, 70); // Kích thước vừa vặn cho footer
+    btnAction->setCursor(Qt::PointingHandCursor);
+
+    // 1. Hiệu ứng Hào quang (Glow) màu cam
+    QGraphicsDropShadowEffect *glowAction = new QGraphicsDropShadowEffect(btnAction);
+    glowAction->setBlurRadius(20); // Độ tỏa
+    glowAction->setColor(QColor(255, 140, 0, 200)); // Màu cam đậm, độ trong suốt 200
+    glowAction->setOffset(0, 0);
+    btnAction->setGraphicsEffect(glowAction);
+
+    // 2. Style Gradient Cam (Copy từ btnRank)
+    btnAction->setStyleSheet(
+        "GameButton{"
+        "   background-color: qlineargradient(x1:0, y1:0, x2:0, y2:1, stop:0 #f6ac43, stop:1 #f5613d);"
+        "   border: 2px solid #fbad6c;"
+        "   border-radius: 15px;"
+        "   color: white;"
+        "   font-weight: 900;"       // Chữ đậm
+        "   font-size: 24px;"        // Cỡ chữ to rõ
+        "   font-family: 'Nunito', sans-serif;"
+        "}"
+        "GameButton:hover {"
+        "   background-color: qlineargradient(x1:0, y1:0, x2:0, y2:1, stop:0 #f6ac43, stop:1 #b04d0e);"
+        "   margin-top: 2px;"        // Hiệu ứng nhấn nhẹ khi di chuột
+        "}"
+        "GameButton:pressed {"
+        "   background-color: #6e3108;"
+        "   margin-top: 4px;"        // Hiệu ứng lún xuống khi bấm
+        "}"
+        "GameButton:disabled {"     // Style khi nút bị vô hiệu hóa (nếu cần)
+        "   background-color: #95a5a6;"
+        "   border: 2px solid #7f8c8d;"
+        "   color: #bdc3c7;"
+        "}"
+    );
+
+    GameButton*btnLeave = new GameButton("Rời Phòng", this);
+    btnLeave->setObjectName("btnLeave");
+    btnLeave->setFixedSize(180, 60);
+    btnLeave->setCursor(Qt::PointingHandCursor);
+
+    // Hiệu ứng Glow Đỏ
+    QGraphicsDropShadowEffect *glowLeave = new QGraphicsDropShadowEffect(btnLeave);
+    glowLeave->setBlurRadius(30); 
+    glowLeave->setColor(QColor(231, 76, 60, 180)); // Đỏ, trong suốt
+    glowLeave->setOffset(0, 0);
+    btnLeave->setGraphicsEffect(glowLeave);
+
+    // Style Gradient Đỏ
+    btnLeave->setStyleSheet(
+        "#btnLeave {"
+        "   background-color: qlineargradient(x1:0, y1:0, x2:0, y2:1, stop:0 #e74c3c, stop:1 #c0392b);"
+        "   border: 2px solid #ec7063;"
+        "   border-radius: 15px;"
+        "   color: white;"
+        "   font-weight: bold;"
+        "   font-size: 18px;"
+        "   font-family: 'Nunito', sans-serif;"
+        "   outline: none;" // Quan trọng
+        "}"
+        "#btnLeave:hover {"
+        "   background-color: qlineargradient(x1:0, y1:0, x2:0, y2:1, stop:0 #ec7063, stop:1 #e74c3c);"
+        "   margin-top: 2px;"
+        "}"
+        "#btnLeave:pressed {"
+        "   background-color: #922b21;" // Đỏ đậm khi nhấn
+        "   margin-top: 4px;"
+        "}"
+    );
 
     btnLayout->addWidget(btnJoinRoom);
     btnLayout->addStretch();
@@ -148,7 +325,7 @@ void FriendRoomWidget::setupUi() {
     btnLayout->addStretch();
     btnLayout->addWidget(btnLeave);
 
-    // Lắp ráp Layout chính
+    // Assemble Main Layout
     mainLayout->addWidget(lblRoomID);
     mainLayout->addStretch();
     mainLayout->addLayout(slotsLayout);
@@ -156,11 +333,11 @@ void FriendRoomWidget::setupUi() {
     mainLayout->addLayout(btnLayout);
 
     // --- CONNECT SIGNALS ---
-    connect(btnLeave, &QPushButton::clicked, this, &FriendRoomWidget::onLeaveBtnClicked);
-    // connect(btnAction, &QPushButton::clicked, this, &FriendRoomWidget::startGame);
-    connect(btnJoinRoom, &QPushButton::clicked, this, &FriendRoomWidget::onJoinRoomClicked);
-    connect(btnAction, &QPushButton::clicked, this, [=](){
+    connect(btnLeave, &GameButton::clicked, this, &FriendRoomWidget::onLeaveBtnClicked);
+    connect(btnJoinRoom, &GameButton::clicked, this, &FriendRoomWidget::onJoinRoomClicked);
+    connect(btnAction, &GameButton::clicked, this, [=](){
         QString text = lblRoomID->text(); 
+        // Logic to extract ID: "Phòng ID: 12345" -> "12345"
         int roomId = text.split(":").last().trimmed().toInt();
         if (roomId > 0) {
             GameClient::instance().sendStartGame(roomId);
@@ -170,17 +347,17 @@ void FriendRoomWidget::setupUi() {
     });
 }
 
-// Hàm cập nhật ID phòng lên Header
+// Update Room ID Header
 void FriendRoomWidget::setRoomID(const QString& id) {
     lblRoomID->setText(QString("Phòng ID: %1").arg(id));
 }
 
-// Hàm cập nhật thông tin chủ phòng (lúc mới tạo)
+// Update Host info initially
 void FriendRoomWidget::setHostInfo(const QString& username) {
     updateMembers(username, "", "");
 }
 
-// Xử lý nút tham gia
+// Join Room Button Handler
 void FriendRoomWidget::onJoinRoomClicked() {
     bool ok;
     QString roomIdText = QInputDialog::getText(this, "Tham gia", "Nhập mã phòng:", QLineEdit::Normal, "", &ok);
@@ -189,87 +366,109 @@ void FriendRoomWidget::onJoinRoomClicked() {
     }
 }
 
-// Xử lý nút rời phòng
+// Leave Room Button Handler
 void FriendRoomWidget::onLeaveBtnClicked() {
     qDebug() << "[UI] Nut Roi Phong da duoc bam!"; 
-    
-    // Gửi lệnh lên Server
     GameClient::instance().sendLeaveRoom();
     emit leftRoom(); 
 }
 
-
+// Update all slots based on player data
 void FriendRoomWidget::updateMembers(const QString& p1, const QString& p2, const QString& p3) {
     qDebug() << "[UI] Update Room: P1=" << p1 << " | P2=" << p2 << " | P3=" << p3;
 
+    // --- UPDATE HOST (SLOT 1) ---
     if (lblUser1) {
         if (!p1.isEmpty()) {
-            // Cập nhật thông tin Host
             lblUser1->setText(p1);
             if (lblStatus1) lblStatus1->setText("ĐÃ SẴN SÀNG");
             
-            // Avatar Host: Chữ cái đầu, nền Xanh Dương hoặc Xanh Lá
             if (lblAvatar1) {
                 lblAvatar1->setText(p1.left(1).toUpper());
                 lblAvatar1->setStyleSheet(
-                    "background-color: #2ecc71; " // Màu xanh lá (Host)
+                    "background-color: #2ecc71; " // Green for Host
                     "color: white; "
-                    "border-radius: 40px; "
+                    "border-radius: 45px; "
                     "font-weight: bold; "
-                    "font-size: 24px;"
+                    "font-size: 28px;"
+                    "border: 2px solid white;"
                 );
+                // Add glow to Host avatar
+                QGraphicsDropShadowEffect *glow = new QGraphicsDropShadowEffect(lblAvatar1);
+                glow->setBlurRadius(20); glow->setColor(QColor("#2ecc71")); glow->setOffset(0,0);
+                lblAvatar1->setGraphicsEffect(glow);
             }
 
-            // --- LOGIC QUYỀN CHỦ PHÒNG 
-            // Nếu người 1 rời phòng, Server đẩy người 2 lên làm p1.
-            // Lso sánh lại: p1 mới có phải là mình không?
+            // Host controls
             if (p1 == m_myUsername) {
-                // Mình là Host mới -> Hiện nút Bắt đầu
                 btnAction->setVisible(true);
                 btnAction->setText("BẮT ĐẦU");
-                btnAction->setStyleSheet("background-color: #e67e22; color: white; font-weight: bold; border-radius: 5px;");
             } else {
-                // Mình là khách -> Ẩn nút
                 btnAction->setVisible(false);
             }
 
         } else {
-            // Trường hợp phòng chưa có ai (Lỗi Server hoặc vừa khởi tạo)
+            // No host (loading or error)
             lblUser1->setText("Đang tải...");
-            if (lblAvatar1) lblAvatar1->setText("...");
+            if (lblAvatar1) {
+                lblAvatar1->setText("...");
+                lblAvatar1->setGraphicsEffect(nullptr); // Remove glow
+            }
             btnAction->setVisible(false); 
         }
     }
 
-    updateGuestSlot(frameSlot2, lblUser2, lblAvatar2, lblStatus2, p2);
-    updateGuestSlot(frameSlot3, lblUser3, lblAvatar3, lblStatus3, p3);
+    // --- UPDATE GUESTS (SLOT 2 & 3) ---
+    // Note: We use QWidget* cast to QFrame* if your header defines them as QFrame, 
+    // or just pass nullptr since we aren't using the frame pointer for styling anymore.
+    // Ideally, updateGuestSlot should take QWidget* or just not take the frame arg.
+    // Based on your previous code, I'll pass nullptr for the frame argument 
+    // since we handled styling in createStyledSlot.
+    
+    updateGuestSlot(nullptr, lblUser2, lblAvatar2, lblStatus2, p2);
+    updateGuestSlot(nullptr, lblUser3, lblAvatar3, lblStatus3, p3);
 }
 
-
+// Helper to update a specific guest slot
 void FriendRoomWidget::updateGuestSlot(QFrame* frame, QLabel* lblName, QLabel* lblAvatar, QLabel* lblStatus, const QString& playerName) {
-    if (!frame || !lblName || !lblAvatar || !lblStatus) return;
+    Q_UNUSED(frame); // We don't style the frame here anymore to preserve the glass effect
 
     if (!playerName.isEmpty()) {
-        // --- TRƯỜNG HỢP CÓ NGƯỜI 
+        // --- OCCUPIED ---
         lblName->setText(playerName);
+        lblName->setStyleSheet("font-size: 18px; font-weight: bold; color: white; background: transparent;");
+        
         lblStatus->setText("ĐÃ VÀO");
+        lblStatus->setStyleSheet("color: #2ecc71; font-weight: bold; background: transparent;");
+        
         lblAvatar->setText(playerName.left(1).toUpper());
-        lblAvatar->setStyleSheet("background-color: #e67e22; color: white; border-radius: 40px; font-weight: bold; font-size: 24px;");
-        frame->setStyleSheet("border: 2px solid #2ecc71; background-color: rgba(46, 204, 113, 0.1); border-radius: 10px;");
-    } 
-    else {         
-        // Reset tên thành "Trống"
-        lblName->setText("Trống");
+        lblAvatar->setStyleSheet(
+            "background-color: #e67e22; " // Orange for guest
+            "color: white; border-radius: 45px; "
+            "font-weight: bold; font-size: 28px; "
+            "border: 2px solid white;"
+        );
+        
+        // Glow effect for occupied slot
+        QGraphicsDropShadowEffect *glow = new QGraphicsDropShadowEffect(lblAvatar);
+        glow->setBlurRadius(20); glow->setColor(QColor("#e67e22")); glow->setOffset(0,0);
+        lblAvatar->setGraphicsEffect(glow);
+
+    } else { 
+        // --- EMPTY ---
+        lblName->setText("");
+        lblName->setStyleSheet("font-size: 16px; color: #bdc3c7; background: transparent;");
+        
         lblStatus->setText("Đang chờ...");
+        lblStatus->setStyleSheet("color: gray; font-style: italic; background: transparent;");
+        
         lblAvatar->setText("?");
         lblAvatar->setStyleSheet(
-            "background-color: #7f8c8d; " 
-            "color: white; "
-            "border-radius: 40px; "
-            "font-weight: bold; "
-            "font-size: 24px;"
+            "background-color: rgba(255,255,255,0.05); " 
+            "color: gray; border-radius: 45px; "
+            "font-weight: bold; font-size: 28px; "
+            "border: 2px dashed #555;" // Dashed border for empty
         );
-
-        frame->setStyleSheet("border: 1px solid #555; background-color: rgba(0,0,0,0.2); border-radius: 10px;");
+        lblAvatar->setGraphicsEffect(nullptr); // Remove glow
     }
 }

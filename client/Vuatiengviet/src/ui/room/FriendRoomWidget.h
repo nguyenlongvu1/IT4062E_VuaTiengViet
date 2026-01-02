@@ -10,6 +10,7 @@ class QVBoxLayout;
 class QHBoxLayout;
 class QLabel;
 class QPushButton;
+class GameButton;
 
 class FriendRoomWidget : public QWidget {
     Q_OBJECT
@@ -38,7 +39,7 @@ private:
     
     QList<QWidget*> playerSlots; 
 
-    QPushButton *btnAction; 
+    GameButton*btnAction; 
 
     void setupUi();
     QWidget* createPlayerSlot(int index); 
@@ -57,6 +58,12 @@ private:
     QLabel *lblAvatar3;
     QLabel *lblUser3;
     QLabel *lblStatus3; 
+    QWidget* createStyledSlot(int slotIndex); 
+    
+    // Lưu trữ con trỏ tới các thành phần để update sau này
+    QWidget* m_slotWidget1 = nullptr;
+    QWidget* m_slotWidget2 = nullptr;
+    QWidget* m_slotWidget3 = nullptr;
 };
 
 #endif // FRIENDROOMWIDGET_H

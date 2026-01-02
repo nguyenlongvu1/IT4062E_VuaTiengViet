@@ -5,6 +5,7 @@
 
 class QSlider;
 class QCheckBox;
+class GameButton;
 
 class SettingsDialog : public QDialog {
     Q_OBJECT
@@ -17,6 +18,10 @@ private:
     QSlider *sliderMusic;
     QSlider *sliderSFX;
     QCheckBox *chkFullScreen;
+    QPoint m_dragPosition;
+protected:
+    void mousePressEvent(QMouseEvent *event) override;
+    void mouseMoveEvent(QMouseEvent *event) override;
 };
 
 #endif // SETTINGSDIALOG_H
