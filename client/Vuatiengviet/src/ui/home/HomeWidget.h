@@ -62,6 +62,8 @@ private:
     bool m_isProcessingMatch = false;
     QDialog* m_radarDialog = nullptr; // Khai báo để quản lý cửa sổ tìm trận
     void switchToGameScreen(QString matchId, QString roomId); // Hàm placeholder
+    QString circleBtnStyle;
+    
 };
 
 #endif // HOMEWIDGET_H

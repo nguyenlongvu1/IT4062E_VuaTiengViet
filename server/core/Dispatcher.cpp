@@ -75,6 +75,9 @@ Message Dispatcher::handleCommand(const Message& msg, ClientHandler*) {
     else if (msg.command == "CREATE_MATCH") {
         resp = MatchService::createMatchFromRoom(msg);
     }
+    else if (msg.command == "CHANGE_PASS") {
+        resp = UserService::resetPassword(msg); 
+    }
     else {
         resp.command = "ERR";
         resp.params["msg"] = "UnknownCommand: " + msg.command;

@@ -2,6 +2,9 @@
 #define SETTINGSDIALOG_H
 
 #include <QDialog>
+#include <QPoint>
+#include <QMouseEvent>
+#include <QPainter>
 
 class QSlider;
 class QCheckBox;
@@ -20,6 +23,7 @@ private:
     QCheckBox *chkFullScreen;
     QPoint m_dragPosition;
 protected:
+    void paintEvent(QPaintEvent *event) override;
     void mousePressEvent(QMouseEvent *event) override;
     void mouseMoveEvent(QMouseEvent *event) override;
 };

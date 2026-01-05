@@ -30,7 +30,7 @@ void HomeWidget::setupUi() {
     columnsLayout->setSpacing(60); 
 
     // --- STYLE CHUNG ---
-    QString circleBtnStyle = 
+    circleBtnStyle = 
         "QAbstractButton {"
         "   background: qlineargradient(x1:0, y1:0, x2:0, y2:1, stop:0 rgba(50, 50, 80, 0.95), stop:1 rgba(20, 20, 35, 0.98));"
         "   border: 1px solid rgba(255, 255, 255, 0.15);"
@@ -386,6 +386,7 @@ void HomeWidget::setupUi() {
         return btn;
     };
 
+    
     GameButton* btnHistory = createMenuBtn(":/history.png", "Lịch sử đấu");
     GameButton* btnSettings = createMenuBtn(":/setting.png", "Cài đặt");
     btnInbox = new GameButton(this); // Cần GameButtoncho logic notify
@@ -431,16 +432,14 @@ void HomeWidget::setupUi() {
     connect(btnHistory, &GameButton::clicked, this, &HomeWidget::openHistory);
 
     // Friend Notify logic
-    connect(&GameClient::instance(), &GameClient::friendRequestReceived, [=](const QString &senderName){
+  connect(&GameClient::instance(), &GameClient::friendRequestReceived, [=](const QString &senderName){
         if(m_notifyDialog) m_notifyDialog->addFriendRequest(senderName);
-        btnInbox->setStyleSheet("background-color: #e74c3c; border-radius: 40px;");
         QApplication::beep();
     });
 
     connect(&GameClient::instance(), &GameClient::pendingListReceived, [=](const QStringList &users){
         if (!users.isEmpty() && m_notifyDialog) {
             for(const QString &u : users) m_notifyDialog->addFriendRequest(u);
-            btnInbox->setStyleSheet("background-color: #e74c3c; border-radius: 40px;");
         }
     });
     
@@ -451,8 +450,36 @@ void HomeWidget::setPlayerInfo(const QString& name, int score, const QString& ra
     m_currentUsername = name;
     m_currentScore = score;
     m_currentRankName = rankName;
+
+    if (m_notifyDialog) {
+        delete m_notifyDialog; 
+    }
     m_notifyDialog = new NotificationDialog(this);
+   connect(m_notifyDialog, &NotificationDialog::notificationCountChanged, this, [=](int count){
+        if (count > 0) {
+            // Có thông báo: Đổi sang màu ĐỎ (Gradient đỏ cho đẹp)
+            QString alertStyle = 
+                "QAbstractButton { "
+                "   background: qlineargradient(x1:0, y1:0, x2:0, y2:1, stop:0 #e74c3c, stop:1 #c0392b); "
+                "   border: 2px solid #ff6b6b; "
+                "   border-radius: 40px; "
+                "}"
+                "QAbstractButton:hover { background: #ff6b6b; }";
+            btnInbox->setStyleSheet(alertStyle);
+            
+            // Đổi icon sang chuông rung hoặc màu khác nếu muốn
+            // btnInbox->setIcon(QIcon(":/noti_active.png")); 
+        } else {
+            // Hết thông báo: Reset về mặc định
+            btnInbox->setStyleSheet(circleBtnStyle);
+            
+            // Reset icon
+            // btnInbox->setIcon(QIcon(":/noti.png"));
+        }
+    });
+
     m_notifyDialog->hide();
+    
     // 1. Cập nhật Tên
     lblUsername->setText(name);
 
@@ -558,7 +585,7 @@ void HomeWidget::playWithFriend() {
     dlg->exec(); 
 }
 void HomeWidget::openInbox() {
-    btnInbox->setObjectName("LogoutBtnIcon");
+    // btnInbox->setObjectName("LogoutBtnIcon");
 
     if(m_notifyDialog) {
         m_notifyDialog->show(); 

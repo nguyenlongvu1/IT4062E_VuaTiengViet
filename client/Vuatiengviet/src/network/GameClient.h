@@ -52,6 +52,7 @@ public:
     void sendGetLeaderboardRequest();
 
     void sendStartGame(int roomId);
+    void sendChangePassword(const QString &oldPass, const QString &newPass);
   
 
 signals:
@@ -81,6 +82,8 @@ signals:
     void userInfoReceived(const QString& username, int points, const QString& rankName);
     void leaderboardReceived(const QList<RankItem> &items);
    void friendStatusChanged(const QString& username, const QString& status);
+   void changePasswordSuccess();
+    void changePasswordFailed(const QString &msg);
     
     
 

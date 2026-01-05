@@ -167,7 +167,7 @@ LoginWidget::LoginWidget(QWidget *parent) : QWidget(parent) {
             txtUser->setFocus();
         }
         else if (code == "InvalidPassword" || code == "WRONG_PASSWORD" || msg.contains("WRONG_PASSWORD", Qt::CaseInsensitive)) {
-            errorContent = "Sai mật khẩu!\nVui lòng thử lại.";
+            errorContent = "Sai tên đăng nhập hoặc mật khẩu!\nVui lòng thử lại.";
             txtPass->clear();
             txtPass->setFocus();
         }

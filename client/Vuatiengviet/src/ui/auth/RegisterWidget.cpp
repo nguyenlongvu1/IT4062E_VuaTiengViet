@@ -109,7 +109,7 @@ RegisterWidget::RegisterWidget(QWidget *parent) : QWidget(parent) {
     lblTitle->setStyleSheet("QLabel#lblTitle { color: #f1c40f; font-size: 26px; font-weight: bold; background: transparent; }");
     
     txtUser = new QLineEdit(this); 
-    txtUser->setPlaceholderText("Tên đăng nhập");
+    txtUser->setPlaceholderText("Tên đăng ký");
     
     txtPass = new QLineEdit(this); 
     txtPass->setPlaceholderText("Mật khẩu");
