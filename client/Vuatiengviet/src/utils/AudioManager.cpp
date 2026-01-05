@@ -1,6 +1,8 @@
 #include "AudioManager.h"
 #include <QDebug>
-#include <SDL2/SDL.h>
+#include <QFile>
+#include <SDL2/SDL.h> 
+#include <SDL2/SDL_mixer.h>
 
 // ===== Singleton =====
 AudioManager& AudioManager::instance() {
@@ -51,22 +53,43 @@ AudioManager::~AudioManager() {
 }
 
 // ===== MUSIC =====
-void AudioManager::playBackgroundMusic(const std::string& path) {
-    stopMusic();
+void AudioManager::playBackgroundMusic(const QString& resourcePath) {
+    stopMusic(); // Dừng nhạc cũ
 
+    // Dọn dẹp nhạc cũ
     if (bgMusic) {
         Mix_FreeMusic(bgMusic);
         bgMusic = nullptr;
     }
+    
+    // [QUAN TRỌNG] Xóa dữ liệu đệm cũ
+    m_musicData.clear(); 
 
-    bgMusic = Mix_LoadMUS(path.c_str());
-    if (!bgMusic) {
-        qDebug() << "Mix_LoadMUS failed:" << Mix_GetError();
+    // 1. Đọc file từ Resource Qt vào biến thành viên m_musicData
+    QFile file(resourcePath);
+    if (!file.open(QIODevice::ReadOnly)) {
+        qDebug() << "Cannot open music resource:" << resourcePath;
+        return;
+    }
+    m_musicData = file.readAll(); // Lưu vào RAM
+    file.close();
+
+    // 2. Tạo RWops từ dữ liệu trong RAM
+    SDL_RWops* rw = SDL_RWFromConstMem(m_musicData.constData(), m_musicData.size());
+    if (!rw) {
+        qDebug() << "SDL_RWFromConstMem failed:" << SDL_GetError();
         return;
     }
 
-    Mix_VolumeMusic((volume * MIX_MAX_VOLUME) / 100);
+    // 3. Load Music từ RWops (freesrc=1 để tự giải phóng rw)
+    bgMusic = Mix_LoadMUS_RW(rw, 1);
+    if (!bgMusic) {
+        qDebug() << "Mix_LoadMUS_RW failed:" << Mix_GetError();
+        return;
+    }
+
     Mix_PlayMusic(bgMusic, -1);
+    qDebug() << "Playing music from RAM:" << resourcePath;
 }
 
 void AudioManager::stopMusic() {
@@ -74,22 +97,41 @@ void AudioManager::stopMusic() {
 }
 
 // ===== CLICK SOUND =====
-void AudioManager::loadClickSound(const std::string& path)
+void AudioManager::loadClickSound(const QString& resourcePath)
 {
     if (clickChunk) {
         Mix_FreeChunk(clickChunk);
         clickChunk = nullptr;
     }
 
-    clickChunk = Mix_LoadWAV(path.c_str());
+    // 1. Đọc file từ Resource
+    QFile file(resourcePath);
+    if (!file.open(QIODevice::ReadOnly)) {
+        qDebug() << "Cannot open click resource:" << resourcePath;
+        return;
+    }
+    QByteArray data = file.readAll();
+    file.close();
+
+    // 2. Tạo RWops
+    SDL_RWops* rw = SDL_RWFromConstMem(data.constData(), data.size());
+    
+    // 3. Load WAV
+    // Lưu ý: Với Chunk (WAV), SDL sẽ copy dữ liệu vào bộ nhớ riêng của nó,
+    // nên ta không cần giữ biến 'data' hay 'rw' sau khi hàm này kết thúc.
+    clickChunk = Mix_LoadWAV_RW(rw, 1);
+
     if (!clickChunk) {
         qDebug() << "Load click failed:" << Mix_GetError();
         return;
     }
 
-    Mix_VolumeChunk(clickChunk, (sfxVolume * MIX_MAX_VOLUME) / 100);
+    // Set volume mặc định
+    // (Giả sử bạn có biến sfxVolume, nếu không có thì bỏ dòng này)
+    // Mix_VolumeChunk(clickChunk, (sfxVolume * MIX_MAX_VOLUME) / 100); 
+    
+    qDebug() << "Loaded click sound from RAM:" << resourcePath;
 }
-
 void AudioManager::playClickSound()
 {
     if (!clickChunk) return;

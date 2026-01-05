@@ -65,48 +65,8 @@ MainWindow::MainWindow(QWidget *parent)
         }
     });
 
-   QFile resourceFile(":/bgMusic.ogg");
-    if (resourceFile.open(QIODevice::ReadOnly)) {
-        
-        // Tạo file tạm, đặt tên pattern để dễ nhận biết
-        m_tempMusicFile = new QTemporaryFile("qt_temp_music_XXXXXX.ogg");
-        
-        // Quan trọng: setAutoRemove(true) để khi tắt app file tự xóa
-        m_tempMusicFile->setAutoRemove(true); 
-        
-        if (m_tempMusicFile->open()) {
-            m_tempMusicFile->write(resourceFile.readAll());
-            m_tempMusicFile->flush(); // Đảm bảo ghi xong xuống đĩa
-            m_tempMusicFile->close(); // Đóng handle để SDL có thể mở lại
-            
-            // 2. Lấy đường dẫn thật
-            QString realPath = m_tempMusicFile->fileName();
-            qDebug() << "Music extracted to:" << realPath;
-
-            // 3. Phát nhạc
-            AudioManager::instance().playBackgroundMusic(realPath.toStdString());
-        }
-    } else {
-        qDebug() << "ERROR: Cannot find music resource!";
-    }
-    QFile clickRes(":/clickSound.wav");
-if (clickRes.open(QIODevice::ReadOnly)) {
-
-    QTemporaryFile* tmpClick = new QTemporaryFile("qt_temp_click_XXXXXX.wav");
-    tmpClick->setAutoRemove(true);
-
-    if (tmpClick->open()) {
-        tmpClick->write(clickRes.readAll());
-        tmpClick->flush();
-        tmpClick->close();
-
-        QString clickPath = tmpClick->fileName();
-        qDebug() << "Click sound extracted to:" << clickPath;
-AudioManager::instance().loadClickSound(clickPath.toStdString());
-
-
-    }
-}
+  AudioManager::instance().playBackgroundMusic(":/bgMusic.ogg");
+    AudioManager::instance().loadClickSound(":/clickSound.wav");
 
     
 }
