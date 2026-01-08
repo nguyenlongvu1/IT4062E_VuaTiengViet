@@ -14,10 +14,23 @@ int main() {
     }
 
     // run schema (create tables if not exists)
-    DB::execFile("server/database/schema.sql");
+    // main runs from server/ working directory; schema lives in database/schema.sql
+    std::cerr << "[MAIN] Loading schema from database/schema.sql..." << std::endl;
+    if (!DB::execFile("database/schema.sql")) {
+        std::cerr << "[MAIN] SQL schema import FAILED - check path and permissions" << std::endl;
+    } else {
+        std::cerr << "[MAIN] Schema loaded successfully" << std::endl;
+    }
     UserDAO::clearAllSessions();
 
-    // seed sample question if none
+    // Seed questions from SQL file if database is empty or insufficient
+    int qcount = DB::queryInt("SELECT COUNT(*) FROM Questions;");
+    if (qcount < 10) {
+        // questions_v2.sql is located at repo root; server binary runs from server/ working directory
+        if (!DB::execFile("../questions_v2.sql")) {
+            std::cerr << "Warning: Failed to import questions_v2.sql" << std::endl;
+        }
+    }
 
     Server server(8080);
     server.start();

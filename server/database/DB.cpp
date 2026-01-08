@@ -49,9 +49,18 @@ bool DB::exec(const std::string &sql) {
 
 bool DB::execFile(const std::string &filePath) {
     std::ifstream file(filePath);
-    if (!file.is_open()) return false;
+    if (!file.is_open()) {
+        std::cerr << "[DB::execFile] Cannot open file: " << filePath << std::endl;
+        return false;
+    }
     std::string sql((std::istreambuf_iterator<char>(file)), std::istreambuf_iterator<char>());
-    return exec(sql);
+    bool result = exec(sql);
+    if (!result) {
+        std::cerr << "[DB::execFile] SQL execution failed for file: " << filePath << std::endl;
+    } else {
+        std::cerr << "[DB::execFile] Successfully loaded: " << filePath << std::endl;
+    }
+    return result;
 }
 
 int DB::lastInsertId() {

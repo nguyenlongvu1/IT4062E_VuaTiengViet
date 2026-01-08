@@ -32,6 +32,8 @@ HEADERS += \
     src/ui/room/FriendRoomWidget.h \
     src/ui/home/NotificationDialog.h \
     src/ui/home/ChangePasswordDialog.h \
+    src/ui/game/GameWidget.h \
+    src/ui/game/ResultWidget.h \
     src/utils/AudioManager.h \
     src/utils/GameButton.h
     
@@ -53,6 +55,8 @@ SOURCES += \
     src/ui/home/NotificationDialog.cpp \
     src/utils/AudioManager.cpp \
     src/ui/home/ChangePasswordDialog.cpp \
+    src/ui/game/GameWidget.cpp \
+    src/ui/game/ResultWidget.cpp \
     src/utils/GameButton.cpp
 
 # Tài nguyên (Nếu có file resources.qrc)

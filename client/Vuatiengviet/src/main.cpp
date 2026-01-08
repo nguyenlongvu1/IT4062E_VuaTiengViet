@@ -7,6 +7,7 @@
 #include <QDirIterator> 
 #include "utils/AudioManager.h"
 #include <QDebug>
+#include <QLocale>
 
 int main(int argc, char *argv[]) {
     qputenv("SDL_AUDIODRIVER", "pulseaudio");
@@ -14,7 +15,8 @@ int main(int argc, char *argv[]) {
     qputenv("PULSE_LATENCY_MSEC", "30");
     // qputenv("PULSE_LATENCY_MSEC", "60");
     QApplication a(argc, argv);
-
+    // Set default locale to Vietnamese to improve IME behavior
+    QLocale::setDefault(QLocale(QLocale::Vietnamese, QLocale::Vietnam));
    
 
     int idBold = QFontDatabase::addApplicationFont(":/Nunito-Bold.ttf");

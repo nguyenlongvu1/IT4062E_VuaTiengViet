@@ -284,11 +284,103 @@ void GameClient::onReadyRead() {
             }
             emit leaderboardReceived(items);
         }
-        else if (response.contains(CMD_MATCH_CREATED)) {
+        else if (response.contains("COMMAND: MATCH_CREATED")) {
             QString matchId = getPayloadValue("match_id");
             QString roomId = getPayloadValue("room_id"); 
-            qDebug() << "[NET] Chủ phòng đã bắt đầu game! MatchID:" << matchId;
+            QString players = getPayloadValue("players");
+            qDebug() << "[NET] Chủ phòng đã tạo match! MatchID:" << matchId << "Players:" << players;
+
+            // Auto-start the match so server sends the first question
+            // Server expects: match_id, room_id, players (comma-separated)
+            QString payload = QString("match_id=%1;room_id=%2;players=%3")
+                                .arg(matchId)
+                                .arg(roomId)
+                                .arg(players);
+            sendMessage("START_MATCH", payload);
+
             emit matchStartedDirectly(matchId, roomId);
+        }
+        
+        // Game question received
+        else if (response.contains("COMMAND: GAME_QUESTION")) {
+            int matchId = getPayloadValue("match_id").toInt();
+            QString questionNum = getPayloadValue("question_num");
+            QString questionId = getPayloadValue("question_id");
+            QString questionText = getPayloadValue("question_text");
+            int timeLimit = getPayloadValue("time_limit").toInt();
+            
+            qDebug() << "[CLIENT] Game question received:" << questionNum << questionText;
+            emit gameQuestionReceived(matchId, questionNum, questionId, questionText, timeLimit);
+
+            // optional scores snapshot
+            QString scoresStr = getPayloadValue("scores");
+            if (!scoresStr.isEmpty()) {
+                QList<QPair<QString, int>> scores;
+                QStringList entries = scoresStr.split(",", Qt::SkipEmptyParts);
+                for (const QString &entry : entries) {
+                    QStringList parts = entry.split(":");
+                    if (parts.size() == 2) {
+                        scores.append({parts[0], parts[1].toInt()});
+                    }
+                }
+                emit gameScoresUpdated(scores);
+            }
+        }
+        
+        // Answer result received
+        else if (response.contains("COMMAND: ANSWER_RESULT")) {
+            bool correct = (getPayloadValue("correct") == "true");
+            int pointsEarned = getPayloadValue("points_earned").toInt();
+            int totalScore = getPayloadValue("total_score").toInt();
+            
+            qDebug() << "[CLIENT] Answer result:" << (correct ? "Correct" : "Wrong") 
+                     << "Points:" << pointsEarned << "Total:" << totalScore;
+            emit answerResultReceived(correct, pointsEarned, totalScore);
+
+            // Live scores broadcast
+            QString scoresStr = getPayloadValue("scores");
+            if (!scoresStr.isEmpty()) {
+                QList<QPair<QString, int>> scores;
+                QStringList entries = scoresStr.split(",", Qt::SkipEmptyParts);
+                for (const QString &entry : entries) {
+                    QStringList parts = entry.split(":");
+                    if (parts.size() == 2) {
+                        scores.append({parts[0], parts[1].toInt()});
+                    }
+                }
+                emit gameScoresUpdated(scores);
+            }
+            
+            // Check if there's a next question
+            if (getPayloadValue("next_question") == "true") {
+                QString questionNum = getPayloadValue("question_num");
+                QString questionId = getPayloadValue("question_id");
+                QString questionText = getPayloadValue("question_text");
+                int timeLimit = getPayloadValue("time_limit").toInt();
+                
+                qDebug() << "[CLIENT] Next question:" << questionNum;
+                emit nextQuestionReceived(questionNum, questionId, questionText, timeLimit);
+            }
+            // Check if game ended
+            else if (getPayloadValue("game_ended") == "true") {
+                QString rankingsStr = getPayloadValue("rankings");
+                QString winnerId = getPayloadValue("winner_id");
+                
+                // Parse rankings: "userId1:score1,userId2:score2,userId3:score3"
+                QList<QPair<QString, int>> rankings;
+                QStringList entries = rankingsStr.split(",", Qt::SkipEmptyParts);
+                for (const QString &entry : entries) {
+                    QStringList parts = entry.split(":");
+                    if (parts.size() == 2) {
+                        QString userId = parts[0];
+                        int score = parts[1].toInt();
+                        rankings.append({userId, score});
+                    }
+                }
+                
+                qDebug() << "[CLIENT] Game ended! Winner:" << winnerId;
+                emit gameEnded(rankings, winnerId);
+            }
         }
     }
 }
@@ -375,7 +467,19 @@ void GameClient::sendStartGame(int roomId) {
     qDebug() << "[CLIENT] Host dang bat dau tran dau cho Room ID:" << roomId;
     QString payload = QString("room_id=%1").arg(roomId);
     sendMessage(CMD_CREATE_MATCH, payload); 
-};
+}
+
+void GameClient::sendAnswer(int matchId, const QString &answer, int timeElapsed) {
+    if (!isConnected()) return;
+    qDebug() << "[CLIENT] Sending answer:" << answer << "for match" << matchId;
+    QString payload = QString("match_id=%1;user_id=%2;answer=%3;time_elapsed=%4")
+                      .arg(matchId)
+                      .arg(m_currentUserID)
+                      .arg(answer)
+                      .arg(timeElapsed);
+    // Server Dispatcher expects ROUND1_ANSWER for gameplay answers
+    sendMessage("ROUND1_ANSWER", payload);
+}
 
 void GameClient::sendChangePassword(const QString &oldPass, const QString &newPass) {
     if (!isConnected()) return;

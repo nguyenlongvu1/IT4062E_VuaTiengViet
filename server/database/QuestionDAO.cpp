@@ -47,3 +47,29 @@ int QuestionDAO::createQuestion(const Question &q) {
     sqlite3_finalize(stmt);
     return DB::lastInsertId();
 }
+
+std::vector<Question> QuestionDAO::getRandomQuestions(const std::string &category, int count) {
+    std::vector<Question> questions;
+    sqlite3 *db = DB::getHandle();
+    if (!db) return questions;
+    
+    const char *sql = "SELECT question_id, content, answer, category FROM Questions WHERE category = ? ORDER BY RANDOM() LIMIT ?;";
+    sqlite3_stmt *stmt = nullptr;
+    
+    if (sqlite3_prepare_v2(db, sql, -1, &stmt, nullptr) == SQLITE_OK) {
+        sqlite3_bind_text(stmt, 1, category.c_str(), -1, SQLITE_TRANSIENT);
+        sqlite3_bind_int(stmt, 2, count);
+        
+        while (sqlite3_step(stmt) == SQLITE_ROW) {
+            Question q;
+            q.id = sqlite3_column_int(stmt, 0);
+            q.text = (const char *)sqlite3_column_text(stmt, 1);
+            q.correctAnswer = (const char *)sqlite3_column_text(stmt, 2);
+            q.category = (const char *)sqlite3_column_text(stmt, 3);
+            questions.push_back(q);
+        }
+    }
+    
+    if (stmt) sqlite3_finalize(stmt);
+    return questions;
+}

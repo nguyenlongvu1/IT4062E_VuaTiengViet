@@ -5,6 +5,7 @@
 #include <algorithm>
 #include "../database/MatchDAO.h"
 #include "../core/Server.h"
+#include "../services/MatchService.h"
 
 // static int NEXT_ROOM_ID = 1;
 static std::map<int, Room> roomTable;
@@ -65,11 +66,13 @@ Message RoomService::joinRoom(const Message& msg) {
     if (msg.params.find("room_id") == msg.params.end()) {
         resp.params["status"] = "fail";
         resp.params["reason"] = "MissingRoomID";
+        std::cout << "[JOIN_ROOM] Fail: missing room_id" << std::endl;
         return resp;
     }
     if (msg.params.find("user_id") == msg.params.end()) {
         resp.params["status"] = "fail";
         resp.params["reason"] = "MissingUserID";
+        std::cout << "[JOIN_ROOM] Fail: missing user_id" << std::endl;
         return resp;
     }
 
@@ -94,15 +97,27 @@ Message RoomService::joinRoom(const Message& msg) {
         if (roomTable.find(roomId) == roomTable.end()) {
             resp.params["status"] = "fail";
             resp.params["reason"] = "PhongKhongTonTai";
+            std::cout << "[JOIN_ROOM] Fail: room " << roomId << " not found" << std::endl;
             return resp;
         }
 
         Room& room = roomTable[roomId];
 
+        // Nếu user đã ở trong phòng này rồi thì trả về success, không thêm trùng
+        auto dup = std::find(room.players.begin(), room.players.end(), userId);
+        if (dup != room.players.end()) {
+            resp.params["status"] = "success";
+            resp.params["room_id"] = std::to_string(roomId);
+            resp.params["count"] = std::to_string(room.players.size());
+            std::cout << "[JOIN_ROOM] User " << userId << " is already in room " << roomId << " (Count: " << room.players.size() << ")" << std::endl;
+            return resp;
+        }
+
         // Kiểm tra phòng đầy
         if (room.players.size() >= 3) {
             resp.params["status"] = "fail";
             resp.params["reason"] = "PhongDaDay";
+            std::cout << "[JOIN_ROOM] Fail: room " << roomId << " is full (Count: " << room.players.size() << ")" << std::endl;
             return resp;
         }
 
@@ -118,6 +133,24 @@ Message RoomService::joinRoom(const Message& msg) {
             for (int pid : room.players) {
                 if (pid != userId) {
                     srv->sendToUser(pid, notifyMsg);
+                }
+            }
+            
+            // AUTO CREATE MATCH KHI ĐỦ 3 NGƯỜI -> broadcast MATCH_CREATED
+            if (room.players.size() == 3) {
+                std::cout << "[INFO] Room " << roomId << " FULL! Auto-creating match...\n";
+                Message req;
+                req.command = "CREATE_MATCH";
+                req.params["room_id"] = std::to_string(roomId);
+                Message m = MatchService::createMatchFromRoom(req);
+                if (m.command == "MATCH_CREATED") {
+                    // Build payload to notify clients
+                    std::string payload = "COMMAND: MATCH_CREATED\n\nmatch_id=" + m.params["match_id"] + ";room_id=" + m.params["room_id"] + ";players=" + m.params["players"];
+                    for (int pid : room.players) {
+                        srv->sendToUser(pid, payload);
+                    }
+                } else {
+                    std::cout << "[WARN] Auto create match failed: " << m.params["msg"] << "\n";
                 }
             }
         }
