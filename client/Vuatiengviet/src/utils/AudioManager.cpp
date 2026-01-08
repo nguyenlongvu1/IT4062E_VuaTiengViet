@@ -12,7 +12,8 @@ AudioManager& AudioManager::instance() {
 
 // ===== INIT =====
 AudioManager::AudioManager() {
-    SDL_setenv("SDL_AUDIODRIVER", "alsa", 1);
+    // SDL_setenv("SDL_AUDIODRIVER", "alsa", 1);
+    // SDL_setenv("SDL_AUDIODRIVER", "pulseaudio", 1);
 
     if (SDL_Init(SDL_INIT_AUDIO) < 0) {
         qDebug() << "SDL_Init failed:" << SDL_GetError();
