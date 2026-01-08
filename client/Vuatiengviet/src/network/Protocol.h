@@ -5,13 +5,10 @@
 #define CMD_LOGIN               "LOGIN"
 #define CMD_LOGIN_OK            "LOGIN_OK"
 #define CMD_LOGIN_FAIL          "ERROR" // Server trả về ERROR chung
-
 #define CMD_REGISTER            "REGISTER"
 #define CMD_REG_OK              "REGISTER_OK"
 #define CMD_REG_FAIL            "REGISTER_FAIL" // Hoặc ERROR
-
 #define CMD_LOGOUT              "LOGOUT"
-
 #define CMD_CHANGE_PASS         "CHANGE_PASS"
 #define CMD_CHANGE_PASS_OK      "RESET_PASSWORD_OK"
 #define CMD_CHANGE_PASS_FAIL    "ERROR"

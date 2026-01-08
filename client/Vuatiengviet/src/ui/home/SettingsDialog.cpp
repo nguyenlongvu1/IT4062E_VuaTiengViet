@@ -9,6 +9,7 @@
 #include <QFrame>
 #include <QGraphicsDropShadowEffect>
 #include <QApplication>
+#include <QMouseEvent>
 #include "ChangePasswordDialog.h"
 
 SettingsDialog::SettingsDialog(QWidget *parent) : QDialog(parent) {
@@ -80,6 +81,9 @@ void SettingsDialog::setupUi() {
     lblTitle->setAlignment(Qt::AlignCenter);
     lblTitle->setStyleSheet("background: transparent; font-size: 26px; font-weight: 900; color: white; text-transform: uppercase; margin-bottom: 5px;");
     
+    // [QUAN TRỌNG] Thêm dòng này để bấm vào chữ "Cài Đặt" vẫn kéo được cửa sổ
+    lblTitle->setAttribute(Qt::WA_TransparentForMouseEvents); 
+    
     QGraphicsDropShadowEffect *glowTitle = new QGraphicsDropShadowEffect(this);
     glowTitle->setBlurRadius(25);
     glowTitle->setColor(QColor(100, 200, 255));
@@ -90,9 +94,12 @@ void SettingsDialog::setupUi() {
     QLabel *lblAudioTitle = new QLabel("Âm Thanh", this);
     lblAudioTitle->setStyleSheet("background: transparent;");
     lblAudioTitle->setProperty("class", "SectionTitle");
+    lblAudioTitle->setAttribute(Qt::WA_TransparentForMouseEvents); // [THÊM]
+
     QFrame *lineAudio = new QFrame(this);
     lineAudio->setFrameShape(QFrame::HLine);
     lineAudio->setProperty("class", "Separator");
+    lineAudio->setAttribute(Qt::WA_TransparentForMouseEvents); // [THÊM]
 
     mainLayout->addWidget(lblAudioTitle);
     mainLayout->addWidget(lineAudio);
@@ -102,12 +109,16 @@ void SettingsDialog::setupUi() {
     
     QLabel *lblMusic = new QLabel("Nhạc nền", this);
     lblMusic->setStyleSheet("background: transparent;");
+    lblMusic->setAttribute(Qt::WA_TransparentForMouseEvents); // [THÊM]
+
     sliderMusic = new QSlider(Qt::Horizontal, this);
     sliderMusic->setRange(0, 100);
     sliderMusic->setValue(AudioManager::instance().getVolume());
     
     QLabel *lblSFX = new QLabel("Hiệu ứng (SFX)", this);
     lblSFX->setStyleSheet("background: transparent;");
+    lblSFX->setAttribute(Qt::WA_TransparentForMouseEvents); // [THÊM]
+
     sliderSFX = new QSlider(Qt::Horizontal, this);
     sliderSFX->setRange(0, 100);
     sliderSFX->setValue(AudioManager::instance().getSFXVolume());
@@ -123,19 +134,15 @@ void SettingsDialog::setupUi() {
     QLabel *lblSysTitle = new QLabel("Hệ Thống", this);
     lblSysTitle->setStyleSheet("background: transparent;");
     lblSysTitle->setProperty("class", "SectionTitle");
+    lblSysTitle->setAttribute(Qt::WA_TransparentForMouseEvents); // [THÊM]
+
     QFrame *lineSys = new QFrame(this);
     lineSys->setFrameShape(QFrame::HLine);
     lineSys->setProperty("class", "Separator");
+    lineSys->setAttribute(Qt::WA_TransparentForMouseEvents); // [THÊM]
 
     mainLayout->addWidget(lblSysTitle);
     mainLayout->addWidget(lineSys);
-
-    QHBoxLayout *chkLayout = new QHBoxLayout();
-    chkFullScreen = new QCheckBox("Chế độ toàn màn hình", this);
-    chkFullScreen->setChecked(true);
-    chkLayout->addStretch();
-    chkLayout->addWidget(chkFullScreen);
-    mainLayout->addLayout(chkLayout);
 
     QPushButton *btnChangePass = new QPushButton("Đổi Mật Khẩu", this);
     btnChangePass->setObjectName("btnChangePass");
@@ -146,6 +153,7 @@ void SettingsDialog::setupUi() {
     QLabel *lblFooter = new QLabel("Vua Tiếng Việt - Version 1.0.0\nDev by: Long Vu & Tu Phan", this);
     lblFooter->setAlignment(Qt::AlignCenter);
     lblFooter->setStyleSheet("background: transparent; color: #95a5a6; font-size: 11px; margin-top: 5px; font-style: italic;");
+    lblFooter->setAttribute(Qt::WA_TransparentForMouseEvents); // [THÊM]
     mainLayout->addWidget(lblFooter);
 
     // --- NÚT BẤM DƯỚI CÙNG ---
@@ -169,20 +177,38 @@ void SettingsDialog::setupUi() {
     connect(btnSave, &QPushButton::clicked, this, &SettingsDialog::accept);
     connect(btnChangePass, &QPushButton::clicked, [=](){
         ChangePasswordDialog dialog(this);
-        dialog.exec(); // Hiện Dialog dạng Modal (chặn cửa sổ cha)
+        dialog.exec(); 
     });
 }
 
 // --- XỬ LÝ KÉO THẢ CỬA SỔ ---
+// --- XỬ LÝ KÉO THẢ CỬA SỔ ---
+
 void SettingsDialog::mousePressEvent(QMouseEvent *event) {
+    // Chỉ xử lý khi nhấn chuột trái
     if (event->button() == Qt::LeftButton) {
+        // Tính khoảng cách từ vị trí chuột đến góc trái trên của cửa sổ
+        // Qt 6 dùng: event->globalPosition().toPoint()
+        // Qt 5 dùng: event->globalPos()
+        
+#if QT_VERSION >= QT_VERSION_CHECK(6, 0, 0)
+        m_dragPosition = event->globalPosition().toPoint() - frameGeometry().topLeft();
+#else
         m_dragPosition = event->globalPos() - frameGeometry().topLeft();
+#endif
         event->accept();
     }
 }
+
 void SettingsDialog::mouseMoveEvent(QMouseEvent *event) {
+    // Chỉ di chuyển khi chuột trái đang được giữ
     if (event->buttons() & Qt::LeftButton) {
+        // Di chuyển cửa sổ đến vị trí mới
+#if QT_VERSION >= QT_VERSION_CHECK(6, 0, 0)
+        move(event->globalPosition().toPoint() - m_dragPosition);
+#else
         move(event->globalPos() - m_dragPosition);
+#endif
         event->accept();
     }
 }

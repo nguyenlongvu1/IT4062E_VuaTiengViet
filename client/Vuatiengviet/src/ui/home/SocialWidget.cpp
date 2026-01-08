@@ -6,7 +6,6 @@
 #include <QListWidgetItem>
 #include <QLineEdit>
 #include <../../utils/GameButton.h>
-#include <QStackedWidget>
 #include <QFrame>
 #include <QDebug>
 #include "../../network/GameClient.h"
@@ -19,6 +18,7 @@ SocialWidget::SocialWidget(QWidget *parent) : QWidget(parent) {
     setupUi();
     reloadFriendList();
 }
+
 void SocialWidget::setupUi() {
     QVBoxLayout *rootLayout = new QVBoxLayout(this);
     // [SỬA LỖI TRÀN 1] Đưa margin về 0 để kích thước khớp chuẩn 450x750
@@ -26,40 +26,38 @@ void SocialWidget::setupUi() {
     this->setAttribute(Qt::WA_TranslucentBackground);
     int glowMargin = 30;
     rootLayout->setContentsMargins(glowMargin, glowMargin, glowMargin, glowMargin);
-    // [SỬA LỖI TRÀN 2] Set kích thước cứng cho chính Widget này luôn
-    // this->setFixedSize(450, 750);
 
     // =========================================================================
-    // 1. KHUNG VIỀN PHÁT SÁNG (BORDER WIDGET)
+    // 1. KHUNG VIỀN PHÁT SÁNG (BORDER WIDGET) - GIỮ NGUYÊN
     // =========================================================================
     QWidget *borderWidget = new QWidget(this);
     borderWidget->setObjectName("borderWidget");
-    borderWidget->setFixedSize(450, 750); // Khớp hoàn toàn với kích thước widget
+    borderWidget->setFixedSize(450, 750); 
     
     // Gradient nền viền (Outer Glow)
     borderWidget->setStyleSheet(
         "background: qlineargradient(x1:0, y1:0, x2:1, y2:1," 
-        "   stop:0    rgba(255, 255, 255, 0),"   
-        "   stop:0.5  rgba(255, 255, 255, 0.5)," // Giảm độ đậm chút để đỡ chói
+        "   stop:0    rgba(255, 255, 255, 0),"    
+        "   stop:0.5  rgba(255, 255, 255, 0.5)," 
         "   stop:1    rgba(255, 255, 255, 0));"
         "border-radius: 20px;" 
     );
 
-    // Layout viền (Margin 2px = Độ dày viền sáng)
+    // Layout viền
     QVBoxLayout *borderLayout = new QVBoxLayout(borderWidget);
     borderLayout->setContentsMargins(2, 2, 2, 2); 
 
     // =========================================================================
-    // 2. KÍNH TỐI (GLASS PANEL)
+    // 2. KÍNH TỐI (GLASS PANEL) - GIỮ NGUYÊN
     // =========================================================================
     QWidget *glassPanel = new QWidget(borderWidget);
     glassPanel->setObjectName("glassPanel");
     glassPanel->setStyleSheet(
         "#glassPanel {"
         "   background: qlineargradient(x1:0, y1:0, x2:0, y2:1,"
-        "       stop:0 rgba(50, 50, 80, 0.95),"   
+        "       stop:0 rgba(50, 50, 80, 0.95),"    
         "       stop:1 rgba(20, 20, 35, 0.98));"  
-        "   border-radius: 20px;" // 38px (border) - 2px (margin) = 36px (khớp góc)
+        "   border-radius: 20px;" 
         "   border: none;"
         "}"
     );
@@ -75,29 +73,24 @@ void SocialWidget::setupUi() {
     rootLayout->addWidget(borderWidget, 0, Qt::AlignCenter);
 
     // =========================================================================
-    // 3. ĐƯỜNG KẺ NEON DỌC (TÍNH TOÁN LẠI TỌA ĐỘ)
+    // 3. ĐƯỜNG KẺ NEON DỌC - GIỮ NGUYÊN
     // =========================================================================
-    // Kích thước thực tế glassPanel: Rộng 446px (450 - 2 trái - 2 phải)
-    // Chiều cao thực tế glassPanel: Cao 746px (750 - 2 trên - 2 dưới)
-
     // --- TRÁI ---
     QWidget *leftLine = new QWidget(glassPanel);
     leftLine->setStyleSheet(
-       "background: qlineargradient(x1:0, y1:0, x2:0, y2:1," // Hướng DỌC (x giữ nguyên, y tăng)
-        "    stop:0    rgba(255, 255, 255, 0),"   // Trên cùng: Trong suốt
-        "    stop:0.2  rgba(255, 255, 255, 0.4)," // Hiện mờ
-        "    stop:0.5  rgba(255, 255, 255, 1.0)," // GIỮA: Trắng sáng nhất (100%)
-        "    stop:0.8  rgba(255, 255, 255, 0.4)," // Mờ dần
-        "    stop:1    rgba(255, 255, 255, 0));"  // Dưới cùng: Trong suốt
+       "background: qlineargradient(x1:0, y1:0, x2:0, y2:1," 
+        "    stop:0    rgba(255, 255, 255, 0),"    
+        "    stop:0.2  rgba(255, 255, 255, 0.4)," 
+        "    stop:0.5  rgba(255, 255, 255, 1.0)," 
+        "    stop:0.8  rgba(255, 255, 255, 0.4)," 
+        "    stop:1    rgba(255, 255, 255, 0));"  
         "border: none;"
     );
     QGraphicsDropShadowEffect *glowL = new QGraphicsDropShadowEffect(leftLine);
     glowL->setBlurRadius(80); 
     glowL->setColor(QColor(200, 230, 255, 255));
-     glowL->setOffset(0,0);
+    glowL->setOffset(0,0);
     leftLine->setGraphicsEffect(glowL);
-    
-    // SetGeometry: x=0, y=40, rộng=3, cao=660 (thụt vào 40px mỗi đầu để tránh góc bo)
     leftLine->setGeometry(-1, 40, 2, 666); 
 
     // --- PHẢI ---
@@ -106,8 +99,6 @@ void SocialWidget::setupUi() {
     QGraphicsDropShadowEffect *glowR = new QGraphicsDropShadowEffect(rightLine);
     glowR->setBlurRadius(80); glowR->setColor(QColor(200, 230, 255, 255)); glowR->setOffset(0,0);
     rightLine->setGraphicsEffect(glowR);
-    
-    // SetGeometry: x = 446 (width) - 3 (line width) = 443
     rightLine->setGeometry(445, 40, 1, 666);
 
 
@@ -115,7 +106,6 @@ void SocialWidget::setupUi() {
     // 4. NỘI DUNG BÊN TRONG (LAYOUT)
     // =========================================================================
     QVBoxLayout *mainLayout = new QVBoxLayout(glassPanel);
-    // Tăng margin bên trong lên để nội dung không dính sát vào đường kẻ neon
     mainLayout->setContentsMargins(25, 25, 25, 25); 
     mainLayout->setSpacing(0);
 
@@ -156,96 +146,28 @@ void SocialWidget::setupUi() {
     searchLayout->addWidget(iconSearch);
     searchLayout->addWidget(txtSearch);
     mainLayout->addWidget(searchContainer);
+    
+    // -------------------------------------------------------------------------
+    // ĐÃ XÓA PHẦN TABS (Bạn Bè / Gần Đây) TẠI ĐÂY
+    // -------------------------------------------------------------------------
+
+    // Kẻ ngang 2 (Giữ lại để ngăn cách thanh tìm kiếm và danh sách)
     mainLayout->addSpacing(15);
-
-    // [C] Tabs
-    QWidget *tabContainer = new QWidget(glassPanel);
-    QHBoxLayout *tabLayout = new QHBoxLayout(tabContainer);
-    tabContainer->setStyleSheet(" border-radius: 10px; background-color: rgba(255, 255, 255, 0.22);");
-    tabLayout->setContentsMargins(3, 3, 3, 3); tabLayout->setSpacing(10);
-
-    btnTabFriend = new GameButton("Bạn Bè", glassPanel);
-    btnTabRecent = new GameButton("Gần Đây", glassPanel);
-    btnTabFriend->setFixedHeight(38);
-    btnTabRecent->setFixedHeight(38);
-    btnTabFriend->setCursor(Qt::PointingHandCursor);
-
-    QString tabActive = 
-        "GameButton {"
-        "   background: qradialgradient("
-        "       cx:0.5, cy:0.5, radius: 0.8, fx:0.5, fy:0.5,"
-        "       stop:0    rgba(255, 255, 255, 0)," 
-        
-        "       stop:0.6  rgba(255, 255, 255, 0.15),"
-        "       stop:1    rgba(255, 255, 255, 0.4));" 
-        
-        "   color: white;"
-        "   border-radius: 10px;" // Bo tròn 19px (bằng một nửa chiều cao 38px)
-        
-        // Viền sáng bao quanh để làm nổi bật hiệu ứng glow
-        "   border: 1px solid rgba(255, 255, 255, 0.5);"
-        "   font-weight: bold;"
-        "   font-size: 20px;"
-        "}";
-
-    QString tabInactive = 
-        "GameButton {"
-        "   background: transparent;"
-        "   color: #bdc3c7;"
-        "   border: none;"
-        "   font-weight: 500;"
-        "   font-size: 18px;"
-        "}"
-        "GameButton:hover { color: white; background-color: rgba(255,255,255,0.05); border-radius: 19px; }";
-
-    btnTabFriend->setStyleSheet(tabActive);
-    btnTabRecent->setStyleSheet(tabInactive);
-
-    tabLayout->addWidget(btnTabFriend, 1);
-    tabLayout->addWidget(btnTabRecent, 1);
-    mainLayout->addWidget(tabContainer);
-
-    // Kẻ ngang 2
     QWidget *sep2 = new QWidget(glassPanel); sep2->setFixedHeight(1);
     sep2->setStyleSheet("background: qlineargradient(x1:0, y1:0, x2:1, y2:0, stop:0 transparent, stop:0.5 rgba(255,255,255,0.3), stop:1 transparent);");
-    mainLayout->addSpacing(15);
     mainLayout->addWidget(sep2);
-    mainLayout->addSpacing(0);
+    mainLayout->addSpacing(10); // Spacing nhỏ trước khi vào list
 
-    // [D] Danh sách (Stacked Widget)
-    QStackedWidget *stackedWidget = new QStackedWidget(glassPanel);
-    stackedWidget->setStyleSheet("background: transparent;");
-    stackedWidget->setContentsMargins(0, 0, 0, 0);
-
-    listFriends = new QListWidget();
+    // [C] Danh sách bạn bè (Không dùng StackedWidget nữa vì chỉ còn 1 list)
+    listFriends = new QListWidget(glassPanel);
     listFriends->setStyleSheet("QListWidget { background: transparent; border: none; outline: none; }");
     listFriends->setVerticalScrollBarPolicy(Qt::ScrollBarAlwaysOff);
     listFriends->setFocusPolicy(Qt::NoFocus);
 
-    listRecent = new QListWidget();
-    listRecent->setStyleSheet(listFriends->styleSheet());
-    listRecent->setVerticalScrollBarPolicy(Qt::ScrollBarAlwaysOff);
-    listRecent->setFocusPolicy(Qt::NoFocus);
+    // Thêm trực tiếp vào layout chính
+    mainLayout->addWidget(listFriends);
 
-    stackedWidget->addWidget(listFriends);
-    stackedWidget->addWidget(listRecent);
-    mainLayout->addWidget(stackedWidget);
-
-    // --- LOGIC EVENTS (Giữ nguyên) ---
-    connect(btnTabFriend, &GameButton::clicked, [=](){
-        stackedWidget->setCurrentIndex(0);
-        btnTabFriend->setStyleSheet(tabActive);
-        btnTabRecent->setStyleSheet(tabInactive);
-    });
-
-    connect(btnTabRecent, &GameButton::clicked, [=](){
-        stackedWidget->setCurrentIndex(1);
-        btnTabFriend->setStyleSheet(tabInactive);
-        btnTabRecent->setStyleSheet(tabActive);
-    });
-    
-    // ... (Giữ các phần connect còn lại y nguyên) ...
-    // Copy lại các đoạn connect search và server ở code cũ của bạn vào đây
+    // --- LOGIC EVENTS ---
     connect(txtSearch, &QLineEdit::textChanged, [=](const QString &text){
        if (text.isEmpty()) reloadFriendList();
     });
@@ -278,7 +200,8 @@ void SocialWidget::setupUi() {
         }
     });
 }
-// ... (Các hàm logic onSearchFriend, onSearchResultReceived giữ nguyên như cũ) ...
+
+// ... (Các hàm logic bên dưới GIỮ NGUYÊN HOÀN TOÀN) ...
 
 void SocialWidget::onSearchFriend() {
     QString keyword = txtSearch->text().trimmed();
@@ -291,24 +214,14 @@ void SocialWidget::onSearchFriend() {
 }
 
 void SocialWidget::onSearchResultReceived(const QList<UserSearchResult>& results) {
-    // Nếu ô tìm kiếm rỗng thì không hiển thị kết quả tìm kiếm
     if (txtSearch->text().isEmpty()) return;
     
     listFriends->clear();
 
-    // Duyệt qua danh sách kết quả trả về
-    // [LƯU Ý] Dùng "UserSearchResult user" (copy) thay vì "const auto& user" 
-    // để ta có thể sửa đổi thuộc tính isFriend của nó.
     for (UserSearchResult user : results) {
-        
-        // KIỂM TRA: Nếu tên người này nằm trong danh sách bạn bè đã cache
         if (m_friendCache.contains(user.username)) {
-            user.isFriend = true; // -> Đánh dấu là bạn bè để hiện dấu chấm
+            user.isFriend = true; 
         }
-
-        // Loại bỏ chính mình (nếu Server lỡ gửi về)
-        // Bạn cần đảm bảo GameClient có hàm lấy username hiện tại, hoặc lọc từ server
-        // if (user.username == "tuphan2510") continue; 
 
         addSearchResultItem(user);
     }
@@ -338,24 +251,22 @@ void SocialWidget::addSearchResultItem(const UserSearchResult& user) {
     mainVLayout->setSpacing(0);
 
     // =========================================================================
-    // PHẦN 1: NỘI DUNG CHÍNH
+    // PHẦN 1: NỘI DUNG CHÍNH (ITEM) - GIỮ NGUYÊN
     // =========================================================================
     QWidget *topContent = new QWidget();
     QHBoxLayout *contentLayout = new QHBoxLayout(topContent);
-    contentLayout->setContentsMargins(10, 0, 15, 5); // Margin phải 15px để nút không sát lề
+    contentLayout->setContentsMargins(10, 0, 15, 5);
     contentLayout->setSpacing(10);
 
     // --- LOGIC MÀU SẮC ---
     QString statusColor;
     bool isGlowing = false;
     
-    // Nếu là bạn bè thì mới tô màu theo trạng thái, còn người lạ thì mặc định xám
     if (user.isFriend) {
         if (user.status == "Online") { statusColor = "#2ecc71"; isGlowing = true; } 
         else if (user.status == "Busy" || user.status == "InGame") { statusColor = "#e74c3c"; isGlowing = true; } 
         else { statusColor = "#95a5a6"; isGlowing = false; }
     } else {
-        // Người lạ: Avatar màu mặc định, không phát sáng
         statusColor = "#bdc3c7"; 
         isGlowing = false;
     }
@@ -386,7 +297,6 @@ void SocialWidget::addSearchResultItem(const UserSearchResult& user) {
         lblAvatar->setGraphicsEffect(glow);
     }
 
-    // Chỉ hiện chấm nhỏ ở avatar nếu là bạn bè
     if (user.isFriend) {
         QLabel *lblSmallDot = new QLabel(avatarWrapper);
         lblSmallDot->setObjectName("lblSmallDot");
@@ -407,7 +317,6 @@ void SocialWidget::addSearchResultItem(const UserSearchResult& user) {
     QLabel *lblName = new QLabel(user.username);
     lblName->setStyleSheet("color: white; font-weight: bold; font-size: 17px; background: transparent;");
 
-    // Nếu là bạn bè thì hiện Status (Online/Offline), người lạ thì hiện "Người lạ" hoặc ẩn
     QString statusText = user.isFriend ? user.status : "Người chơi";
     
     QLabel *lblStatusText = new QLabel(statusText);
@@ -417,21 +326,15 @@ void SocialWidget::addSearchResultItem(const UserSearchResult& user) {
     textLayout->addWidget(lblName);
     textLayout->addWidget(lblStatusText);
 
-    // Lắp Avatar và Text vào Layout
     contentLayout->addWidget(avatarWrapper, 0, Qt::AlignVCenter);
     contentLayout->addWidget(textContainer, 1, Qt::AlignVCenter);
 
-    // =========================================================================
-    // [QUAN TRỌNG] --- C. XỬ LÝ NÚT KẾT BẠN vs CHẤM TRÒN ---
-    // =========================================================================
-    
+    // --- C. XỬ LÝ NÚT KẾT BẠN vs CHẤM TRÒN ---
     if (!user.isFriend) {
-        // --- TRƯỜNG HỢP 1: NGƯỜI LẠ -> HIỆN NÚT THÊM BẠN ---
         GameButton *btnAdd = new GameButton("+");
         btnAdd->setFixedSize(36, 36);
         btnAdd->setCursor(Qt::PointingHandCursor);
         
-        // Style Neon Xanh lá
         btnAdd->setStyleSheet(
             "GameButton {"
             "   background-color: rgba(46, 204, 113, 0.15);" 
@@ -451,11 +354,10 @@ void SocialWidget::addSearchResultItem(const UserSearchResult& user) {
             "}"
         );
 
-        // Logic gửi lời mời
         connect(btnAdd, &GameButton::clicked, [=]() {
             GameClient::instance().sendAddFriendRequest(user.username);
-            btnAdd->setText("✓"); // Đổi thành dấu tích
-            btnAdd->setEnabled(false); // Khóa nút
+            btnAdd->setText("✓"); 
+            btnAdd->setEnabled(false); 
             btnAdd->setStyleSheet(
                 "background-color: transparent; color: #bdc3c7; border: 1px solid #7f8c8d; border-radius: 18px; font-size: 18px;"
             );
@@ -464,7 +366,6 @@ void SocialWidget::addSearchResultItem(const UserSearchResult& user) {
         contentLayout->addWidget(btnAdd, 0, Qt::AlignVCenter);
 
     } else {
-        // --- TRƯỜNG HỢP 2: BẠN BÈ -> HIỆN CHẤM TRÒN ONLINE/OFFLINE ---
         QLabel *lblRightDot = new QLabel();
         lblRightDot->setObjectName("lblRightDot");
         lblRightDot->setFixedSize(12, 12);
