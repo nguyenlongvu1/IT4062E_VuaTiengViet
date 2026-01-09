@@ -19,13 +19,34 @@ bool GameClient::isConnected() const {
     return m_socket->state() == QAbstractSocket::ConnectedState;
 }
 
+static QString buildTLVPayloadFromKv(const QString &payloadKv) {
+    // input format: key=value;key2=value2
+    // output: key|len|value;key2|len|value2
+    QStringList tokens = payloadKv.split(";", Qt::SkipEmptyParts);
+    QStringList out;
+    for (const QString &t : tokens) {
+        int eq = t.indexOf('=');
+        if (eq == -1) {
+            out << t.trimmed();
+            continue;
+        }
+        QString k = t.left(eq).trimmed();
+        QString v = t.mid(eq + 1).trimmed();
+        out << QString("%1|%2|%3").arg(k).arg(v.toUtf8().size()).arg(v);
+    }
+    return out.join(";");
+}
+
 void GameClient::sendMessage(const QString &command, const QString &payload) {
     if (!isConnected()) return;
 
+    // If payload already looks like TLV (has '|'), keep as-is; else convert key=value pairs to TLV style
+    QString tlvPayload = payload.contains('|') ? payload : buildTLVPayloadFromKv(payload);
+
     QString msg = QString("COMMAND: %1\nLENGTH: %2\n\n%3") 
                   .arg(command)
-                  .arg(payload.toUtf8().length())
-                  .arg(payload);
+                  .arg(tlvPayload.toUtf8().length())
+                  .arg(tlvPayload);
                   
     m_socket->write(msg.toUtf8());
     m_socket->flush();
@@ -68,14 +89,44 @@ void GameClient::onReadyRead() {
         int splitIndex = response.indexOf("\n\n");
         if (splitIndex != -1) payload = response.mid(splitIndex + 2);
 
-        // Helper lấy giá trị payload
+        // Parse payload: prefer TLV (key|len|value) else fallback to key=value
+        QMap<QString, QString> payloadMap;
+        auto tryParseTLV = [&]() {
+            bool ok = false;
+            QStringList tokens = payload.split(";", Qt::SkipEmptyParts);
+            for (const QString &t : tokens) {
+                int p1 = t.indexOf('|');
+                int p2 = (p1 == -1) ? -1 : t.indexOf('|', p1 + 1);
+                if (p1 != -1 && p2 != -1) {
+                    QString k = t.left(p1).trimmed();
+                    QString lenStr = t.mid(p1 + 1, p2 - p1 - 1).trimmed();
+                    QString v = t.mid(p2 + 1);
+                    bool lenOk = false;
+                    int declared = lenStr.toInt(&lenOk);
+                    if (lenOk && declared == v.toUtf8().size()) {
+                        payloadMap[k] = v;
+                        ok = true;
+                    }
+                }
+            }
+            return ok;
+        };
+
+        bool parsed = tryParseTLV();
+        if (!parsed) {
+            QStringList tokens = payload.split(";", Qt::SkipEmptyParts);
+            for (const QString &t : tokens) {
+                int eq = t.indexOf('=');
+                if (eq != -1) {
+                    QString k = t.left(eq).trimmed();
+                    QString v = t.mid(eq + 1).trimmed();
+                    payloadMap[k] = v;
+                }
+            }
+        }
+
         auto getPayloadValue = [&](QString key) -> QString {
-            QString search = key + "=";
-            int start = payload.indexOf(search);
-            if (start == -1) return "";
-            int end = payload.indexOf(";", start);
-            if (end == -1) end = payload.length();
-            return payload.mid(start + search.length(), end - (start + search.length())).trimmed();
+            return payloadMap.value(key);
         };
 
         // --- NHÓM 1: XỬ LÝ LỖI TỔNG QUÁT (ERROR / FAIL) ---

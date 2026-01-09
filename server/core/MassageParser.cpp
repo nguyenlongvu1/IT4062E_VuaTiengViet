@@ -36,23 +36,57 @@ Message MessageParser::parse(const std::string &s) {
                 body += line;
             }
         }
-        // body is like: key=value;key=value;...
-        std::string cur = body;
-        size_t start = 0;
-        while (start < cur.size()) {
-            size_t posSemi = cur.find(';', start);
-            std::string token = (posSemi == std::string::npos) ? cur.substr(start) : cur.substr(start, posSemi - start);
-            token = trim(token);
-            if (!token.empty()) {
-                size_t eq = token.find('=');
-                if (eq != std::string::npos) {
-                    std::string k = trim(token.substr(0, eq));
-                    std::string v = trim(token.substr(eq+1));
-                    msg.params[k] = v;
+        // Try TLV body: token format "tag|len|value" separated by ';'
+        bool parsedTLV = false;
+        {
+            std::string cur = body;
+            size_t start = 0;
+            while (start < cur.size()) {
+                size_t posSemi = cur.find(';', start);
+                std::string token = (posSemi == std::string::npos) ? cur.substr(start) : cur.substr(start, posSemi - start);
+                token = trim(token);
+                if (!token.empty()) {
+                    size_t p1 = token.find('|');
+                    size_t p2 = (p1 == std::string::npos) ? std::string::npos : token.find('|', p1 + 1);
+                    if (p1 != std::string::npos && p2 != std::string::npos) {
+                        std::string k = trim(token.substr(0, p1));
+                        std::string lenStr = trim(token.substr(p1 + 1, p2 - p1 - 1));
+                        std::string v = token.substr(p2 + 1);
+                        try {
+                            int declared = std::stoi(lenStr);
+                            if (declared == static_cast<int>(v.size())) {
+                                msg.params[k] = v;
+                                parsedTLV = true;
+                            }
+                        } catch (...) {
+                            // ignore malformed token
+                        }
+                    }
                 }
+                if (posSemi == std::string::npos) break;
+                start = posSemi + 1;
             }
-            if (posSemi == std::string::npos) break;
-            start = posSemi + 1;
+        }
+
+        // Fallback: key=value;key=value;
+        if (!parsedTLV) {
+            std::string cur = body;
+            size_t start = 0;
+            while (start < cur.size()) {
+                size_t posSemi = cur.find(';', start);
+                std::string token = (posSemi == std::string::npos) ? cur.substr(start) : cur.substr(start, posSemi - start);
+                token = trim(token);
+                if (!token.empty()) {
+                    size_t eq = token.find('=');
+                    if (eq != std::string::npos) {
+                        std::string k = trim(token.substr(0, eq));
+                        std::string v = trim(token.substr(eq+1));
+                        msg.params[k] = v;
+                    }
+                }
+                if (posSemi == std::string::npos) break;
+                start = posSemi + 1;
+            }
         }
         return msg;
     }
@@ -71,16 +105,15 @@ Message MessageParser::parse(const std::string &s) {
 }
 
 std::string MessageParser::build(const Message &msg) {
-    // Build TLV format with body using semicolon separators
+    // Build body in pseudo-TLV: key|len|value;...
     std::ostringstream oss;
     oss << "COMMAND: " << msg.command << "\n";
-    // build body
     std::ostringstream body;
     bool first = true;
     for (auto &kv : msg.params) {
         if (!first) body << ";";
         first = false;
-        body << kv.first << "=" << kv.second;
+        body << kv.first << "|" << kv.second.size() << "|" << kv.second;
     }
     std::string bodyStr = body.str();
     oss << "LENGTH: " << bodyStr.size() << "\n\n";

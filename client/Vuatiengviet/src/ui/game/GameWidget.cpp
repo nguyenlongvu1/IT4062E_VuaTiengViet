@@ -111,7 +111,8 @@ void GameWidget::showNextQuestion(const QString &questionNum, const QString &que
 void GameWidget::updateScores(const QList<QPair<QString,int>> &scores) {
     QStringList lines;
     for (const auto &p : scores) {
-        lines << QString("ID %1: %2 điểm").arg(p.first).arg(p.second);
+        // Hiển thị nhãn người chơi (username nếu server gửi, còn không sẽ là ID)
+        lines << QString("%1: %2 điểm").arg(p.first).arg(p.second);
     }
     if (lines.isEmpty()) {
         lblScoreboard->setText("Chưa có điểm");

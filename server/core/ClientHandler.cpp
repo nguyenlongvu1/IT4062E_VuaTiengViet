@@ -56,6 +56,11 @@ void ClientHandler::run() {
                     if(!item.empty()) targetIds.push_back(std::stoi(item));
                 }
             }
+            // Đảm bảo người gửi cũng nhận được gói broadcast (tránh bị kẹt không thấy GAME_ENDED)
+            int selfId = getUserId();
+            bool selfInList = std::find(targetIds.begin(), targetIds.end(), selfId) != targetIds.end();
+            if (selfId > 0 && !selfInList) targetIds.push_back(selfId);
+
             std::string packet = MessageParser::build(response);
             server->sendToUsers(targetIds, packet);
         }

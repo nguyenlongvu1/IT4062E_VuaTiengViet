@@ -18,8 +18,9 @@ MainWindow::MainWindow(QWidget *parent)
     : QMainWindow(parent)
 {
     this->setMinimumSize(1024, 768); 
-    this->resize(1024, 768);
-    this->showFullScreen();
+    this->resize(1280, 800);
+    // Run in windowed mode by default to avoid forced fullscreen
+    // this->showFullScreen();
     m_stackedWidget = new QStackedWidget(this);
     setCentralWidget(m_stackedWidget);
 
