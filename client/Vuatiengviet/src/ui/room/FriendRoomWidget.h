@@ -27,6 +27,7 @@ public:
 signals:
     void leftRoom();
     void startGame();
+    
 private slots:
     void onJoinRoomClicked(); 
     // void onLeaveBtnClicked(); 

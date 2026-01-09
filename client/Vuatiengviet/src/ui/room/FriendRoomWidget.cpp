@@ -10,6 +10,7 @@
 #include <QGraphicsDropShadowEffect> 
 #include "../../network/GameClient.h"
 #include "../../utils/GameButton.h"
+#include <QTimer>
 
 #include <QStyle>
 
@@ -17,6 +18,8 @@ FriendRoomWidget::FriendRoomWidget(QString myUsername, bool isHost, QWidget *par
     : QWidget(parent), m_isHost(isHost), m_myUsername(myUsername)
 {
     // Initialize pointers to nullptr for safety
+
+    this->setAttribute(Qt::WA_DeleteOnClose);
     lblUser1 = nullptr; lblUser2 = nullptr; lblUser3 = nullptr;
     lblAvatar1 = nullptr; lblAvatar2 = nullptr; lblAvatar3 = nullptr;
     lblStatus1 = nullptr; lblStatus2 = nullptr; lblStatus3 = nullptr;
@@ -347,6 +350,9 @@ void FriendRoomWidget::setupUi() {
     connect(btnLeave, &GameButton::clicked, this, &FriendRoomWidget::onLeaveBtnClicked);
     connect(btnJoinRoom, &GameButton::clicked, this, &FriendRoomWidget::onJoinRoomClicked);
     connect(btnAction, &GameButton::clicked, this, [=](){
+        if (m_isHost) {
+        emit startGame();   // 🔥 thông báo cho MainWindow
+    } 
         QString text = lblRoomID->text(); 
         // Logic to extract ID: "Phòng ID: 12345" -> "12345"
         int roomId = text.split(":").last().trimmed().toInt();

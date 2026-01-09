@@ -53,6 +53,7 @@ public:
 
     void sendStartGame(int roomId);
     void sendChangePassword(const QString &oldPass, const QString &newPass);
+    void sendAnswer(int matchId, const QString &answer, int timeElapsed);
   
 
 signals:
@@ -84,7 +85,13 @@ signals:
    void friendStatusChanged(const QString& username, const QString& status);
    void changePasswordSuccess();
     void changePasswordFailed(const QString &msg);
-    
+     void gameQuestionReceived(int matchId, QString questionNum, QString questionId, 
+                              QString questionText, int timeLimit);
+    void answerResultReceived(bool correct, int pointsEarned, int totalScore);
+    void nextQuestionReceived(QString questionNum, QString questionId, 
+                             QString questionText, int timeLimit);
+    void gameScoresUpdated(QList<QPair<QString, int>> scores);
+    void gameEnded(QList<QPair<QString, int>> rankings, QString winnerId);
     
 
 private slots:

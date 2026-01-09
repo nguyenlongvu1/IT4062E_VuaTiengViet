@@ -33,6 +33,8 @@ HEADERS += \
     src/ui/home/NotificationDialog.h \
     src/ui/home/ChangePasswordDialog.h \
     src/utils/AudioManager.h \
+    src/ui/game/GameWidget.h \
+    src/ui/game/ResultWidget.h \
     src/utils/GameButton.h
     
 
@@ -52,6 +54,8 @@ SOURCES += \
     src/ui/room/FriendRoomWidget.cpp \
     src/ui/home/NotificationDialog.cpp \
     src/utils/AudioManager.cpp \
+    src/ui/game/GameWidget.cpp \
+    src/ui/game/ResultWidget.cpp \
     src/ui/home/ChangePasswordDialog.cpp \
     src/utils/GameButton.cpp
 
