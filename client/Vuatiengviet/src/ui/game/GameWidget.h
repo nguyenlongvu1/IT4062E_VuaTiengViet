@@ -27,6 +27,7 @@ public:
 
 signals:
     void answerSubmitted(int matchId, const QString &answer, int timeElapsed);
+    void surrenderRequested(int matchId);
 
 private slots:
     void onAnswerClicked(const QString &answer);
@@ -34,6 +35,7 @@ private slots:
     void onOptionBtnClicked(); // Slot mới xử lý khi bấm nút chọn (Vòng 1)
 
 private:
+    QPushButton *btnSurrender;
     void setupUi();
     void resetTimer();
 

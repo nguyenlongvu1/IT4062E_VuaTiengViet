@@ -377,5 +377,20 @@ void GameClient::onReadyRead() {
             }
             emit leaderboardReceived(items);
         }
+        else if (response.contains("COMMAND: ELIMINATED")) {
+            qDebug() << "[CLIENT] Nhận lệnh ELIMINATED -> Bị loại!";
+            emit playerEliminated(); // Bắn tín hiệu sang MainWindow
+        }
     }
+}
+void GameClient::sendSurrender(int matchId) {
+    if (!isConnected()) return;
+    qDebug() << "[CLIENT] Gửi lệnh đầu hàng cho Match:" << matchId;
+    
+    // Gửi lệnh SURRENDER_MATCH kèm match_id và user_id
+    QString payload = QString("match_id=%1;user_id=%2")
+                      .arg(matchId)
+                      .arg(m_currentUserID);
+                      
+    sendMessage("SURRENDER_MATCH", payload);
 }

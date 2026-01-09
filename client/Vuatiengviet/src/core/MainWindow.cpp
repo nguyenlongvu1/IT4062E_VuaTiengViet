@@ -131,6 +131,32 @@ connect(&GameClient::instance(), &GameClient::gameEnded,
     connect(resultScreen, &ResultWidget::returnToLobby, [=]() {
         m_stackedWidget->setCurrentWidget(homeScreen);
     });
+    connect(&GameClient::instance(), &GameClient::playerEliminated, this, [=]() {
+        // 1. Dừng game
+        if (gameScreen) gameScreen->stopGame();
+        
+        // 2. Hiện thông báo
+        QMessageBox::information(this, "Thông báo", "Rất tiếc, bạn đã bị loại vì điểm thấp nhất vòng này!");
+        
+        // 3. Về màn hình chính
+        m_stackedWidget->setCurrentWidget(homeScreen);
+        
+        // 4. Refresh lại trạng thái
+        GameClient::instance().sendGetRoomInfo();
+    });
+    connect(gameScreen, &GameWidget::surrenderRequested, this, [=](int matchId) {
+    // 1. Gửi lệnh lên Server
+    GameClient::instance().sendSurrender(matchId);
+    
+    // 2. Dừng game ở Client
+    gameScreen->stopGame();
+    
+    // 3. Chuyển ngay về màn hình Home (Lobby)
+    m_stackedWidget->setCurrentWidget(homeScreen);
+    
+    // 4. (Tuỳ chọn) Reset trạng thái phòng
+    GameClient::instance().sendGetRoomInfo(); 
+});
     
 
     // 4. Kết nối tới Server khi mở App

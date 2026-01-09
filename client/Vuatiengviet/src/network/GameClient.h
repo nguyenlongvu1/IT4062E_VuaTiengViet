@@ -55,6 +55,7 @@ public:
     void sendStartGame(int roomId);
     void sendChangePassword(const QString &oldPass, const QString &newPass);
     void sendAnswer(int matchId, const QString &answer, int timeElapsed);
+    void sendSurrender(int matchId);
   
 
 signals:
@@ -94,6 +95,7 @@ signals:
    void gameQuestionReceived(int matchId, QString questionNum, QString questionId, QString questionText, QString options, int roundId, int timeLimit);
     // 2. Nhận câu hỏi tiếp theo (Đủ 6 tham số - không cần matchId)
     void nextQuestionReceived(int matchId, QString questionNum, QString questionId, QString questionText, QString options, int roundId, int timeLimit);
+    void playerEliminated();
 private slots:
     void onReadyRead();
     void onSocketConnected();    // Hàm xử lý nội bộ khi kết nối thành công

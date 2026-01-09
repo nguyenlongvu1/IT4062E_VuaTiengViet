@@ -78,6 +78,9 @@ Message Dispatcher::handleCommand(const Message& msg, ClientHandler*) {
     else if (msg.command == "CHANGE_PASS") {
         resp = UserService::resetPassword(msg); 
     }
+    else if (msg.command == "SURRENDER_MATCH") {
+        return GameService::surrenderMatch(msg);
+    }
     else {
         resp.command = "ERR";
         resp.params["msg"] = "UnknownCommand: " + msg.command;

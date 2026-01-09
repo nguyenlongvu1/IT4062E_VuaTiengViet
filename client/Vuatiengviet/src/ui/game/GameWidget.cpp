@@ -23,6 +23,14 @@ void GameWidget::setupUi() {
     
     // 1. Header: Question number and timer
     QHBoxLayout *headerLayout = new QHBoxLayout();
+
+    btnSurrender = new QPushButton("Bỏ cuộc", this);
+    btnSurrender->setCursor(Qt::PointingHandCursor);
+    btnSurrender->setStyleSheet("QPushButton { background-color: #e74c3c; color: white; font-weight: bold; border-radius: 5px; padding: 5px 10px; } QPushButton:hover { background-color: #c0392b; }");
+    connect(btnSurrender, &QPushButton::clicked, [=](){
+        // Xác nhận (Optional: có thể thêm QMessageBox hỏi lại nếu muốn)
+        emit surrenderRequested(m_matchId);
+    });
     
     lblQuestionNum = new QLabel("Câu 1/10", this);
     lblQuestionNum->setStyleSheet("QLabel { color: #f1c40f; font-size: 24px; font-weight: bold; }");

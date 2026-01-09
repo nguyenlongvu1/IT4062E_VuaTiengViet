@@ -58,11 +58,25 @@ void ClientHandler::run() {
             }
             // Đảm bảo người gửi cũng nhận được gói broadcast (tránh bị kẹt không thấy GAME_ENDED)
             int selfId = getUserId();
-            bool selfInList = std::find(targetIds.begin(), targetIds.end(), selfId) != targetIds.end();
+           bool selfInList = std::find(targetIds.begin(), targetIds.end(), selfId) != targetIds.end();
             if (selfId > 0 && !selfInList) targetIds.push_back(selfId);
 
             std::string packet = MessageParser::build(response);
             server->sendToUsers(targetIds, packet);
+        }
+        if (response.params.count("eliminated_id")) {
+            int elimId = std::stoi(response.params.at("eliminated_id"));
+            
+            std::cout << "[SERVER] Sending ELIMINATED packet to User " << elimId << std::endl;
+            
+            // Tạo gói tin đơn giản báo bị loại
+            std::string elimPacket = "COMMAND: ELIMINATED\nLENGTH: 0\n\n";
+            
+            // Gửi thẳng cho người đó
+            server->sendToUser(elimId, elimPacket);
+            
+            // Xóa param này đi để không ảnh hưởng tới các logic khác
+            response.params.erase("eliminated_id");
         }
         
         // 5. XỬ LÝ NOTIFICATION (Gửi thông báo riêng cho người khác - ví dụ: Kết bạn)
