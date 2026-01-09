@@ -97,7 +97,7 @@ MainWindow::MainWindow(QWidget *parent)
 
         // Cập nhật bảng điểm
         connect(&GameClient::instance(), &GameClient::gameScoresUpdated, 
-            this, [=](const QList<QPair<QString, int>> &scores) {
+            this, [=](const QList<QPair<QString, QString>> &scores) { // SỬA: int -> QString
         if (gameScreen) {
             gameScreen->updateScores(scores);
         }
@@ -157,7 +157,16 @@ connect(&GameClient::instance(), &GameClient::gameEnded,
     // 4. (Tuỳ chọn) Reset trạng thái phòng
     GameClient::instance().sendGetRoomInfo(); 
 });
-    
+    connect(&GameClient::instance(), &GameClient::userInfoReceived, 
+            this, [=](const QString &username, int points, const QString &rank) {
+        
+        // Cập nhật tên vào màn hình Game ngay khi đăng nhập xong
+        if (gameScreen) {
+            gameScreen->setPlayerName(username);
+        }
+
+        // (Code cũ của bạn nếu có xử lý hiển thị điểm/rank ở Home thì giữ nguyên)
+    });
 
     // 4. Kết nối tới Server khi mở App
     GameClient::instance().connectToServer("127.0.0.1", 8080);

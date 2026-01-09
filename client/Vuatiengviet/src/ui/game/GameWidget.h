@@ -21,9 +21,11 @@ public:
     void showNextQuestion(const QString &questionNum, const QString &questionId,
                           const QString &questionText, const QString &options, int roundId, int timeLimit);
 
-    void updateScores(const QList<QPair<QString,int>> &scores);
+    void updateScores(const QList<QPair<QString, QString>> &scores);
     void showAnswerResult(bool correct, int pointsEarned, int totalScore);
     void stopGame();
+    void setPlayerName(const QString &name);
+    
 
 signals:
     void answerSubmitted(int matchId, const QString &answer, int timeElapsed);
@@ -45,6 +47,7 @@ private:
     QLabel *lblScore;
     QLabel *lblQuestion;
     QLabel *lblScoreboard;
+    QLabel *lblPlayerName;
 
     // --- Container cho Vòng 2, 3 (Nhập text) ---
     QWidget *containerTextInput;
@@ -64,6 +67,7 @@ private:
     int m_timeElapsed;
     int m_totalScore;
     bool m_answered;
+    QString m_myUsername;
 };
 
 #endif // GAMEWIDGET_H

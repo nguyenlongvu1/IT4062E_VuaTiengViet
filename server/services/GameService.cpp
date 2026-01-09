@@ -67,8 +67,8 @@ Message GameService::startMatch(const Message &msg) {
 
     // [CHỐNG SPAM]: Nếu game đã có -> IGNORE
     if (activeGames.count(matchId) > 0) {
-        resp.command = "IGNORE"; 
-        return resp;
+        std::cout << "[WARNING] Match ID " << matchId << " exists. Overwriting/Resetting...\n";
+        activeGames.erase(matchId);
     }
 
     // TẠO GAME MỚI
@@ -198,65 +198,50 @@ Message GameService::submitAnswer(const Message &msg) {
     // ========================================================================
     // LOGIC LOẠI NGƯỜI (BATTLE ROYALE) KHI CHUYỂN VÒNG
     // ========================================================================
+    // --- LOGIC LOẠI NGƯỜI (BATTLE ROYALE) ---
     if (nextRoundNeeded) {
-        // Xếp hạng hiện tại (Thấp đến Cao để dễ lấy người chót)
         std::vector<std::pair<int, int>> rankList;
+        // Chỉ lấy những người ĐANG CHƠI (chưa bị loại) để xét duyệt
         for (int pid : game.players) {
             rankList.push_back({pid, game.scores[pid]});
         }
-        // Sort tăng dần: Người thấp điểm nhất ở đầu [0]
-        std::sort(rankList.begin(), rankList.end(), [](auto &a, auto &b){
+
+        // [QUAN TRỌNG]: Sắp xếp từ THẤP ĐẾN CAO (a.second < b.second)
+        // Để rankList[0] sẽ là người thấp điểm nhất
+        std::sort(rankList.begin(), rankList.end(), [](auto &a, auto &b){ 
             return a.second < b.second; 
         });
 
         int eliminatedId = -1;
-
-        // --- HẾT VÒNG 1: LOẠI NGƯỜI THỨ 3 (Thấp nhất) ---
+        // Nếu vòng 1 và còn >= 3 người -> Loại người bét (rankList[0])
         if (game.currentRound == 1 && rankList.size() >= 3) {
-            eliminatedId = rankList[0].first; // Người thấp điểm nhất
-            
-            // TRỪ 20 ĐIỂM RANKING
-            UserDAO::addPoints(eliminatedId, -20);
-            std::cout << "[GAME] Round 1 End. Eliminated User " << eliminatedId << " (-20 pts)\n";
+            eliminatedId = rankList[0].first;
         }
-        // --- HẾT VÒNG 2: LOẠI NGƯỜI THỨ 2 (Thấp nhất trong 2 người còn lại) ---
+        // Nếu vòng 2 và còn >= 2 người -> Loại người bét (rankList[0])
         else if (game.currentRound == 2 && rankList.size() >= 2) {
             eliminatedId = rankList[0].first;
-            
-            // CỘNG 0 ĐIỂM RANKING
-            UserDAO::addPoints(eliminatedId, 0); 
-            std::cout << "[GAME] Round 2 End. Eliminated User " << eliminatedId << " (+0 pts)\n";
         }
 
-        // THỰC HIỆN LOẠI BỎ KHỎI GAME
         if (eliminatedId != -1) {
-            // Xóa khỏi danh sách players
+            if (game.currentRound == 1) UserDAO::addPoints(eliminatedId, -20); // Trừ 20
+            else UserDAO::addPoints(eliminatedId, 0); // Cộng 0
+
+            // Xóa người chơi khỏi danh sách
             auto it = std::remove(game.players.begin(), game.players.end(), eliminatedId);
             game.players.erase(it, game.players.end());
-            game.answered.erase(eliminatedId); // Xóa khỏi map trả lời
-
+            game.answered.erase(eliminatedId);
             
-
-            // Gửi thông báo RIÊNG cho người bị loại (Gói tin đặc biệt)
-            // Ta dùng cơ chế notify_id của Server.cpp để gửi riêng
-            Message elimMsg;
-            elimMsg.command = "ELIMINATED";
-            elimMsg.params["notify_id"] = std::to_string(eliminatedId);
-            elimMsg.params["notify_msg"] = "COMMAND: ELIMINATED\nLENGTH: 0\n\n"; // Gói tin gửi tới Client bị loại
-            
-            // Hack: Gắn kèm vào resp để Server xử lý gửi đi
+            // Gắn cờ báo cho Server biết để gửi tin ELIMINATED
             resp.params["eliminated_id"] = std::to_string(eliminatedId);
         }
 
-        // Chuẩn bị cho vòng mới
         game.currentRound++;
         game.currentQuestionIndex = 0;
-        game.questions = getQuestionsForRound(game.currentRound); // Lấy câu hỏi mới
-
-        // Nếu chuẩn bị vào Vòng 3 -> Lưu điểm hiện tại của người sống sót để tính bonus
+        game.questions = getQuestionsForRound(game.currentRound);
+        
+        // Lưu điểm người sống sót vào vòng 3 để tính bonus sau này
         if (game.currentRound == 3 && !game.players.empty()) {
-            int survivorId = game.players[0];
-            game.winnerScoreBeforeR3 = game.scores[survivorId];
+            game.winnerScoreBeforeR3 = game.scores[game.players[0]];
         }
     }
 
@@ -285,9 +270,24 @@ Message GameService::submitAnswer(const Message &msg) {
         
         // Gửi Ranking giả (chỉ có người thắng) để hiển thị Result Screen
         if (winnerId != -1) {
-            resp.params["rankings"] = std::to_string(winnerId) + ":" + std::to_string(game.scores[winnerId]);
+            resp.params["winner_id"] = UserDAO::getUsername(winnerId); // Gửi Tên
         }
+        std::vector<std::pair<int, int>> fullRankList;
+        for (auto const& [uid, score] : game.scores) {
+            fullRankList.push_back({uid, score});
+        }
+        std::sort(fullRankList.begin(), fullRankList.end(), [](auto &a, auto &b){ 
+            return a.second > b.second; // Cao -> Thấp
+        });
 
+        std::stringstream ss;
+        for (size_t i = 0; i < fullRankList.size(); ++i) {
+            if (i > 0) ss << ",";
+            // [HIỆN TÊN]: Convert ID sang Tên
+            std::string uName = UserDAO::getUsername(fullRankList[i].first);
+            ss << uName << ":" << fullRankList[i].second;
+        }
+        resp.params["rankings"] = ss.str();
         // Danh sách người nhận tin (chỉ còn người thắng)
         std::stringstream ssPlayers;
         for (size_t i = 0; i < game.players.size(); ++i) {
@@ -332,13 +332,23 @@ Message GameService::submitAnswer(const Message &msg) {
         std::stringstream ssScore;
         int c = 0;
         for (auto const& [uid, sc] : game.scores) {
-            // Chỉ gửi điểm của những người còn sống
-            bool active = false;
-            for(int p : game.players) if(p == uid) active = true;
+            if (c++ > 0) ssScore << ",";
             
-            if (active) {
-                if (c++ > 0) ssScore << ",";
-                ssScore << uid << ":" << sc;
+            std::string uName = UserDAO::getUsername(uid);
+            bool isActive = false;
+            for(int p : game.players) if(p == uid) isActive = true;
+
+            if (!isActive) {
+                ssScore << uName << " (Loại):" << sc;
+            } else {
+                // NẾU LÀ VÒNG 3: HIỆN DẠNG "BASE + (BONUS)"
+                if (game.currentRound == 3) {
+                    int base = game.winnerScoreBeforeR3;
+                    int bonus = sc - base;
+                    ssScore << uName << ":" << base << " + (" << bonus << ")";
+                } else {
+                    ssScore << uName << ":" << sc;
+                }
             }
         }
         resp.params["scores"] = ssScore.str();

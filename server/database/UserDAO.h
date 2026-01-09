@@ -41,5 +41,6 @@ struct LeaderboardInfo {
     static std::string getRankName(int points);
     static int getPoints(int userId);
     static std::vector<LeaderboardInfo> getLeaderboard(int limit = 10);
+    static std::string getUsername(int userId);
     
 };

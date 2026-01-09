@@ -8,6 +8,8 @@
 GameClient::GameClient() {
     m_socket = new QTcpSocket(this);
     m_lastCommand = "";
+    m_buffer = "";             // Init
+    m_lastQuestionNum = "";
     // connect(m_socket, &QTcpSocket::connected, this, &GameClient::connected);
     // connect(m_socket, &QTcpSocket::disconnected, this, &GameClient::disconnected);
     connect(m_socket, &QTcpSocket::readyRead, this, &GameClient::onReadyRead);
@@ -111,10 +113,15 @@ void GameClient::sendJoinRoom(int roomId) {
 void GameClient::sendCreateRoomRequest() { sendMessage(CMD_CREATE_ROOM, "user_id=" + m_currentUserID); }
 void GameClient::sendGetRoomInfo() { sendMessage(CMD_GET_ROOM_INFO, "user_id=" + m_currentUserID); }
 void GameClient::sendLeaveRoom() { sendMessage(CMD_LEAVE_ROOM_REQ, ""); }
-void GameClient::sendFindMatch() { sendMessage(CMD_FIND_MATCH, "user_id=" + m_currentUserID); }
+void GameClient::sendFindMatch() { 
+    m_lastQuestionNum = "";
+    sendMessage(CMD_FIND_MATCH, "user_id=" + m_currentUserID); 
+}
 void GameClient::sendCancelMatch() { sendMessage(CMD_CANCEL_MATCH_REQ, ""); }
 void GameClient::sendGetLeaderboardRequest() { sendMessage(CMD_GET_LEADERBOARD, ""); }
-void GameClient::sendStartGame(int roomId) { sendMessage(CMD_CREATE_MATCH, QString("room_id=%1").arg(roomId)); }
+void GameClient::sendStartGame(int roomId) { 
+    m_lastQuestionNum = "";
+    sendMessage(CMD_CREATE_MATCH, QString("room_id=%1").arg(roomId)); }
 
 void GameClient::sendAnswer(int matchId, const QString &answer, int timeElapsed) {
     sendMessage("ROUND1_ANSWER", QString("match_id=%1;user_id=%2;answer=%3;time_elapsed=%4")
@@ -130,7 +137,7 @@ void GameClient::sendChangePassword(const QString &oldPass, const QString &newPa
 // HÀM XỬ LÝ DỮ LIỆU NHẬN TỪ SERVER (RECEIVE) - ĐÃ FIX LỖI UTF-8
 // ============================================================================
 void GameClient::onReadyRead() {
-    static QString m_buffer; // Bộ đệm lưu dữ liệu bị cắt dở
+    // static QString m_buffer; // Bộ đệm lưu dữ liệu bị cắt dở
     QByteArray data = m_socket->readAll();
     m_buffer.append(QString::fromUtf8(data));
 
@@ -190,9 +197,9 @@ void GameClient::onReadyRead() {
             int matchId = getPayloadValue("match_id").toInt();
             QString qNum = getPayloadValue("question_num");
             
-            static QString lastQNum = "";
-            if (qNum == lastQNum && !qNum.isEmpty()) continue; // Chặn trùng
-            lastQNum = qNum;
+            // static QString lastQNum = "";
+            if (qNum == m_lastQuestionNum && !qNum.isEmpty()) continue; // Chặn trùng
+            m_lastQuestionNum = qNum; // Cập nhật
 
             emit gameQuestionReceived(matchId, qNum, 
                                       getPayloadValue("question_id"), 
@@ -202,15 +209,18 @@ void GameClient::onReadyRead() {
                                       getPayloadValue("time_limit").toInt());
             QString scoresStr = getPayloadValue("scores");
             if (!scoresStr.isEmpty()) {
-                QList<QPair<QString, int>> scores;
+                // SỬA 1: Đổi từ int sang QString
+                QList<QPair<QString, QString>> scores; 
+                
                 QStringList entries = scoresStr.split(",", Qt::SkipEmptyParts);
                 for (const QString &entry : entries) {
                     QStringList parts = entry.split(":");
                     if (parts.size() == 2) {
-                        scores.append({parts[0], parts[1].toInt()});
+                        // SỬA 2: Bỏ .toInt() đi, giữ nguyên là String
+                        scores.append({parts[0], parts[1]}); 
                     }
                 }
-                emit gameScoresUpdated(scores); // Bắn tín hiệu cập nhật điểm
+                emit gameScoresUpdated(scores); 
             }
         }
         
@@ -224,6 +234,8 @@ void GameClient::onReadyRead() {
             if (getPayloadValue("next_question") == "true") {
                 int matchId = getPayloadValue("match_id").toInt();
                 QString qNum = getPayloadValue("question_num");
+
+                m_lastQuestionNum = qNum;
                 
                 // Update lastQNum để không bị chặn
                 static QString lastQNum = ""; 
@@ -252,14 +264,17 @@ void GameClient::onReadyRead() {
             // Update Score Realtime
             QString scoresStr = getPayloadValue("scores");
             if (!scoresStr.isEmpty()) {
-                QList<QPair<QString, int>> scores;
-                QStringList entries = scoresStr.split(",", Qt::SkipEmptyParts);
-                for (const QString &entry : entries) {
-                    QStringList parts = entry.split(":");
-                    if (parts.size() == 2) scores.append({parts[0], parts[1].toInt()});
+            QList<QPair<QString, QString>> scores; // SỬA: QString, QString
+            QStringList entries = scoresStr.split(",", Qt::SkipEmptyParts);
+            for (const QString &entry : entries) {
+                QStringList parts = entry.split(":");
+                if (parts.size() == 2) {
+                    // SỬA: Giữ nguyên parts[1] là string, không toInt()
+                    scores.append({parts[0], parts[1]}); 
                 }
-                emit gameScoresUpdated(scores);
             }
+            emit gameScoresUpdated(scores);
+        }
         }
 
         // 3. LOGIN & REGISTER

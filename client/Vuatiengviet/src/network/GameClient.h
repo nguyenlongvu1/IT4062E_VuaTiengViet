@@ -90,12 +90,13 @@ signals:
      
     void answerResultReceived(bool correct, int pointsEarned, int totalScore);
    
-    void gameScoresUpdated(QList<QPair<QString, int>> scores);
+    // void gameScoresUpdated(QList<QPair<QString, int>> scores);
     void gameEnded(QList<QPair<QString, int>> rankings, QString winnerId);
    void gameQuestionReceived(int matchId, QString questionNum, QString questionId, QString questionText, QString options, int roundId, int timeLimit);
     // 2. Nhận câu hỏi tiếp theo (Đủ 6 tham số - không cần matchId)
     void nextQuestionReceived(int matchId, QString questionNum, QString questionId, QString questionText, QString options, int roundId, int timeLimit);
     void playerEliminated();
+    void gameScoresUpdated(const QList<QPair<QString, QString>> &scores);
 private slots:
     void onReadyRead();
     void onSocketConnected();    // Hàm xử lý nội bộ khi kết nối thành công
@@ -107,6 +108,8 @@ private:
     void sendMessage(const QString &cmd, const QString &payload);
     QString m_lastCommand;
     QString m_currentUserID;
+    QString m_buffer;           // Thay cho static m_buffer
+    QString m_lastQuestionNum;
 };
 
 #endif // GAMECLIENT_H

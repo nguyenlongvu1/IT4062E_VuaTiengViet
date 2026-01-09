@@ -448,3 +448,31 @@ std::vector<UserDAO::LeaderboardInfo> UserDAO::getLeaderboard(int limit) {
     sqlite3_finalize(stmt);
     return list;
 }
+// =========================================================
+// HÀM: LẤY TÊN USER TỪ ID
+// =========================================================
+std::string UserDAO::getUsername(int userId) {
+    sqlite3 *db = DB::getHandle();
+    
+    // Giá trị mặc định nếu không tìm thấy hoặc lỗi DB
+    std::string result = "User " + std::to_string(userId); 
+
+    if (!db) return result;
+
+    const char *sql = "SELECT username FROM Users WHERE user_id = ?;";
+    sqlite3_stmt *stmt = nullptr;
+
+    if (sqlite3_prepare_v2(db, sql, -1, &stmt, nullptr) == SQLITE_OK) {
+        sqlite3_bind_int(stmt, 1, userId);
+        
+        if (sqlite3_step(stmt) == SQLITE_ROW) {
+            const unsigned char *text = sqlite3_column_text(stmt, 0);
+            if (text) {
+                result = std::string((const char *)text);
+            }
+        }
+    }
+    
+    if (stmt) sqlite3_finalize(stmt);
+    return result;
+}

@@ -24,6 +24,9 @@ void GameWidget::setupUi() {
     // 1. Header: Question number and timer
     QHBoxLayout *headerLayout = new QHBoxLayout();
 
+    lblPlayerName = new QLabel("Unknown", this);
+    lblPlayerName->setStyleSheet("QLabel { color: #3498db; font-size: 20px; font-weight: bold; border: 2px solid #3498db; border-radius: 5px; padding: 5px 10px; }");
+
     btnSurrender = new QPushButton("Bỏ cuộc", this);
     btnSurrender->setCursor(Qt::PointingHandCursor);
     btnSurrender->setStyleSheet("QPushButton { background-color: #e74c3c; color: white; font-weight: bold; border-radius: 5px; padding: 5px 10px; } QPushButton:hover { background-color: #c0392b; }");
@@ -41,6 +44,11 @@ void GameWidget::setupUi() {
     lblScore = new QLabel("Điểm: 0", this);
     lblScore->setStyleSheet("QLabel { color: #2ecc71; font-size: 22px; font-weight: bold; }");
     
+    headerLayout->addWidget(lblPlayerName); // <--- Đặt tên ở đầu tiên bên trái
+    headerLayout->addSpacing(10);
+    headerLayout->addWidget(btnSurrender);
+    headerLayout->addSpacing(10);
+
     headerLayout->addWidget(lblQuestionNum);
     headerLayout->addStretch();
     headerLayout->addWidget(lblTimer);
@@ -217,13 +225,23 @@ void GameWidget::onOptionBtnClicked() {
     }
 }
 
-void GameWidget::updateScores(const QList<QPair<QString,int>> &scores) {
+void GameWidget::updateScores(const QList<QPair<QString, QString>> &scores) {
     QStringList lines;
     for (const auto &p : scores) {
-        lines << QString("ID %1: %2 điểm").arg(p.first).arg(p.second);
+        // p.second bây giờ là chuỗi (VD: "50 + (10)")
+        lines << QString("%1: %2 điểm").arg(p.first).arg(p.second);
+
+        if (p.first == m_myUsername) {
+            // Tách lấy số điểm tổng (nếu muốn) hoặc hiển thị y nguyên
+            // Nếu chuỗi là "50 + (10)", hiển thị lên Header cũng sẽ là "Điểm: 50 + (10)"
+            lblScore->setText("Điểm: " + p.second);
+            
+            // Nếu bạn muốn lấy màu mè (VD: đổi màu nếu điểm cao), xử lý ở đây
+        }
     }
+    
     if (lines.isEmpty()) {
-        lblScoreboard->setText("Chưa có điểm");
+        lblScoreboard->setText("Chờ người chơi...");
     } else {
         lblScoreboard->setText(lines.join("\n"));
     }
@@ -300,4 +318,10 @@ void GameWidget::stopGame() {
     btnOption2->setEnabled(false);
     
     m_answered = true;
+}
+void GameWidget::setPlayerName(const QString &name) {
+    m_myUsername = name;
+    if (lblPlayerName) {
+        lblPlayerName->setText("👤 " + name); // Thêm icon cho đẹp
+    }
 }
