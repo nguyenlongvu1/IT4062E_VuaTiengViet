@@ -2,8 +2,7 @@
 #include <QVBoxLayout>
 #include <QHBoxLayout>
 #include <QFont>
-#include <QLineEdit>
-#include <QPushButton>
+#include <QDebug>
 
 GameWidget::GameWidget(QWidget *parent) : QWidget(parent), 
     m_matchId(0), m_timeLimit(10), m_timeElapsed(0), m_totalScore(0), m_answered(false) {
@@ -22,7 +21,7 @@ void GameWidget::setupUi() {
     mainLayout->setContentsMargins(40, 30, 40, 30);
     mainLayout->setSpacing(20);
     
-    // Header: Question number and timer
+    // 1. Header: Question number and timer
     QHBoxLayout *headerLayout = new QHBoxLayout();
     
     lblQuestionNum = new QLabel("Câu 1/10", this);
@@ -40,14 +39,14 @@ void GameWidget::setupUi() {
     headerLayout->addStretch();
     headerLayout->addWidget(lblScore);
     
-    // Question text
-    lblQuestion = new QLabel("Nhập đáp án đúng:", this);
+    // 2. Question text
+    lblQuestion = new QLabel("Đang tải câu hỏi...", this);
     lblQuestion->setStyleSheet("QLabel { color: white; font-size: 20px; padding: 20px; background-color: #16213e; border-radius: 10px; }");
     lblQuestion->setWordWrap(true);
     lblQuestion->setAlignment(Qt::AlignCenter);
     lblQuestion->setMinimumHeight(100);
 
-    // Scoreboard
+    // 3. Scoreboard
     lblScoreboard = new QLabel("Điểm: --", this);
     lblScoreboard->setStyleSheet("QLabel { color: #bdc3c7; font-size: 16px; background-color: #0f2137; padding: 12px; border-radius: 8px; }");
     lblScoreboard->setAlignment(Qt::AlignLeft | Qt::AlignTop);
@@ -58,7 +57,13 @@ void GameWidget::setupUi() {
     mainLayout->addWidget(lblScoreboard);
     mainLayout->addSpacing(20);
 
-    // Text input answer
+    // ============================================================
+    // 4. UI VÒNG 2 & 3: NHẬP TEXT (Container)
+    // ============================================================
+    containerTextInput = new QWidget(this);
+    QVBoxLayout *layoutText = new QVBoxLayout(containerTextInput);
+    layoutText->setContentsMargins(0,0,0,0);
+
     inputAnswer = new QLineEdit(this);
     inputAnswer->setPlaceholderText("Nhập đáp án (không phân biệt hoa thường)");
     inputAnswer->setMinimumHeight(50);
@@ -69,50 +74,145 @@ void GameWidget::setupUi() {
     btnSubmit->setStyleSheet("QPushButton { background:#1abc9c; color:white; font-size:18px; border-radius:8px; padding:12px; } QPushButton:hover { background:#16a085; }");
     connect(btnSubmit, &QPushButton::clicked, [=]() { onAnswerClicked(inputAnswer->text()); });
 
-    mainLayout->addWidget(inputAnswer);
-    mainLayout->addWidget(btnSubmit);
+    layoutText->addWidget(inputAnswer);
+    layoutText->addWidget(btnSubmit);
+
+    // ============================================================
+    // 5. UI VÒNG 1: TRẮC NGHIỆM (Container)
+    // ============================================================
+    containerChoice = new QWidget(this);
+    QHBoxLayout *layoutChoice = new QHBoxLayout(containerChoice);
+    layoutChoice->setSpacing(20);
+    layoutChoice->setContentsMargins(0,0,0,0);
+
+    // Style chung cho nút chọn
+    QString btnStyle = "QPushButton { background: #34495e; color: white; font-size: 20px; font-weight: bold; border-radius: 12px; height: 80px; border: 2px solid #2c3e50; } QPushButton:hover { background: #3498db; border-color: #3498db; } QPushButton:pressed { background: #2980b9; }";
+
+    btnOption1 = new QPushButton("Option A", this);
+    btnOption1->setStyleSheet(btnStyle);
+    btnOption1->setCursor(Qt::PointingHandCursor);
+    connect(btnOption1, &QPushButton::clicked, this, &GameWidget::onOptionBtnClicked);
+
+    btnOption2 = new QPushButton("Option B", this);
+    btnOption2->setStyleSheet(btnStyle);
+    btnOption2->setCursor(Qt::PointingHandCursor);
+    connect(btnOption2, &QPushButton::clicked, this, &GameWidget::onOptionBtnClicked);
+
+    layoutChoice->addWidget(btnOption1);
+    layoutChoice->addWidget(btnOption2);
+
+    // Thêm cả 2 container vào layout chính
+    mainLayout->addWidget(containerTextInput);
+    mainLayout->addWidget(containerChoice);
+    
+    // Mặc định ẩn cả 2, sẽ show khi start game
+    containerTextInput->hide();
+    containerChoice->hide();
+
     mainLayout->addStretch();
 }
 
 void GameWidget::startGame(int matchId, const QString &questionNum, const QString &questionId, 
-                           const QString &questionText, int timeLimit) {
+                           const QString &questionText, const QString &options, int roundId, int timeLimit) {
     m_matchId = matchId;
     m_currentQuestionId = questionId;
     m_timeLimit = timeLimit;
     m_totalScore = 0;
     m_answered = false;
     
-    lblQuestionNum->setText("Câu " + questionNum + "/10");
+    // Hiển thị vòng chơi
+    lblQuestionNum->setText("Vòng " + QString::number(roundId) + " - Câu " + questionNum);
     lblQuestion->setText(questionText);
+    
     lblScore->setText("Điểm: 0");
-    lblScoreboard->setText("Điểm từng người sẽ hiển thị tại đây");
-    inputAnswer->clear();
-    inputAnswer->setEnabled(true);
-    btnSubmit->setEnabled(true);
+    lblScoreboard->setText("Bảng điểm sẽ cập nhật...");
+    
+    // Reset style câu hỏi về mặc định
+    lblQuestion->setStyleSheet("QLabel { color: white; font-size: 20px; padding: 20px; background-color: #16213e; border-radius: 10px; }");
+
+    // --- LOGIC CHUYỂN ĐỔI UI ---
+    if (roundId == 1) {
+        // VÒNG 1: TRẮC NGHIỆM
+        containerTextInput->hide();
+        containerChoice->show();
+
+        // Parse options (ví dụ: "sáng lạng | xán lạn")
+        QStringList opts = options.split("|");
+        if (opts.size() >= 2) {
+            btnOption1->setText(opts[0].trimmed());
+            btnOption2->setText(opts[1].trimmed());
+        } else {
+            // Fallback nếu lỗi data
+            btnOption1->setText("Lỗi");
+            btnOption2->setText("Data");
+        }
+        
+        btnOption1->setEnabled(true);
+        btnOption2->setEnabled(true);
+    } else {
+        // VÒNG 2, 3: NHẬP TỪ
+        containerChoice->hide();
+        containerTextInput->show();
+
+        inputAnswer->clear();
+        inputAnswer->setEnabled(true);
+        btnSubmit->setEnabled(true);
+        inputAnswer->setFocus(); // Focus vào ô nhập để gõ luôn
+    }
     
     resetTimer();
 }
 
 void GameWidget::showNextQuestion(const QString &questionNum, const QString &questionId,
-                                   const QString &questionText, int timeLimit) {
+                                  const QString &questionText, const QString &options, int roundId, int timeLimit) {
     m_currentQuestionId = questionId;
     m_timeLimit = timeLimit;
     m_answered = false;
     
-    lblQuestionNum->setText("Câu " + questionNum + "/10");
+    lblQuestionNum->setText("Vòng " + QString::number(roundId) + " - Câu " + questionNum);
     lblQuestion->setText(questionText);
-    inputAnswer->clear();
-    inputAnswer->setEnabled(true);
-    btnSubmit->setEnabled(true);
+    
+    // Reset style
+    lblQuestion->setStyleSheet("QLabel { color: white; font-size: 20px; padding: 20px; background-color: #16213e; border-radius: 10px; }");
+
+    if (roundId == 1) {
+        containerTextInput->hide();
+        containerChoice->show();
+
+        QStringList opts = options.split("|");
+        if (opts.size() >= 2) {
+            btnOption1->setText(opts[0].trimmed());
+            btnOption2->setText(opts[1].trimmed());
+        }
+        btnOption1->setEnabled(true);
+        btnOption2->setEnabled(true);
+    } else {
+        containerChoice->hide();
+        containerTextInput->show();
+
+        inputAnswer->clear();
+        inputAnswer->setEnabled(true);
+        btnSubmit->setEnabled(true);
+        inputAnswer->setFocus();
+    }
     
     resetTimer();
+}
+
+void GameWidget::onOptionBtnClicked() {
+    if (m_answered) return;
+    
+    QPushButton *btn = qobject_cast<QPushButton*>(sender());
+    if (btn) {
+        // Lấy text trên nút làm đáp án
+        onAnswerClicked(btn->text());
+    }
 }
 
 void GameWidget::updateScores(const QList<QPair<QString,int>> &scores) {
     QStringList lines;
     for (const auto &p : scores) {
-        // Hiển thị nhãn người chơi (username nếu server gửi, còn không sẽ là ID)
-        lines << QString("%1: %2 điểm").arg(p.first).arg(p.second);
+        lines << QString("ID %1: %2 điểm").arg(p.first).arg(p.second);
     }
     if (lines.isEmpty()) {
         lblScoreboard->setText("Chưa có điểm");
@@ -125,13 +225,13 @@ void GameWidget::showAnswerResult(bool correct, int pointsEarned, int totalScore
     m_totalScore = totalScore;
     lblScore->setText("Điểm: " + QString::number(m_totalScore));
     
-    // Show feedback briefly
+    // Feedback màu sắc
     if (correct) {
-        lblQuestion->setText("✓ Đúng! +" + QString::number(pointsEarned) + " điểm");
-        lblQuestion->setStyleSheet("QLabel { color: #2ecc71; font-size: 20px; padding: 20px; background-color: #16213e; border-radius: 10px; }");
+        lblQuestion->setText(lblQuestion->text() + "\n(✓ Chính xác! +" + QString::number(pointsEarned) + ")");
+        lblQuestion->setStyleSheet("QLabel { color: #2ecc71; font-size: 20px; padding: 20px; background-color: #16213e; border-radius: 10px; border: 2px solid #2ecc71; }");
     } else {
-        lblQuestion->setText("✗ Sai! +0 điểm");
-        lblQuestion->setStyleSheet("QLabel { color: #e74c3c; font-size: 20px; padding: 20px; background-color: #16213e; border-radius: 10px; }");
+        lblQuestion->setText(lblQuestion->text() + "\n(✗ Sai rồi!)");
+        lblQuestion->setStyleSheet("QLabel { color: #e74c3c; font-size: 20px; padding: 20px; background-color: #16213e; border-radius: 10px; border: 2px solid #e74c3c; }");
     }
 }
 
@@ -141,8 +241,11 @@ void GameWidget::onAnswerClicked(const QString &answer) {
     m_answered = true;
     m_timer->stop();
     
+    // Khóa UI
     inputAnswer->setEnabled(false);
     btnSubmit->setEnabled(false);
+    btnOption1->setEnabled(false);
+    btnOption2->setEnabled(false);
     
     emit answerSubmitted(m_matchId, answer, m_timeElapsed);
 }
@@ -154,17 +257,14 @@ void GameWidget::onTimerTick() {
     if (remaining <= 0) {
         m_timer->stop();
         lblTimer->setText("0s");
-        // Auto-submit empty answer
+        // Auto-submit rỗng khi hết giờ
         if (!m_answered) {
-            m_answered = true;
-            inputAnswer->setEnabled(false);
-            btnSubmit->setEnabled(false);
-            emit answerSubmitted(m_matchId, "", m_timeElapsed);
+            onAnswerClicked(""); 
         }
     } else {
         lblTimer->setText(QString::number(remaining) + "s");
         
-        // Change color when time is running out
+        // Đổi màu khi sắp hết giờ
         if (remaining <= 3) {
             lblTimer->setStyleSheet("QLabel { color: #ff0000; font-size: 32px; font-weight: bold; }");
         } else if (remaining <= 5) {
@@ -177,5 +277,19 @@ void GameWidget::resetTimer() {
     m_timeElapsed = 0;
     lblTimer->setText(QString::number(m_timeLimit) + "s");
     lblTimer->setStyleSheet("QLabel { color: #2ecc71; font-size: 28px; font-weight: bold; }");
-    m_timer->start(1000); // 1 second interval
+    m_timer->start(1000); 
+}
+
+void GameWidget::stopGame() {
+    if (m_timer->isActive()) {
+        m_timer->stop();
+    }
+
+    inputAnswer->clear();
+    inputAnswer->setEnabled(false);
+    btnSubmit->setEnabled(false);
+    btnOption1->setEnabled(false);
+    btnOption2->setEnabled(false);
+    
+    m_answered = true;
 }

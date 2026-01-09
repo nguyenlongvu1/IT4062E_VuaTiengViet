@@ -25,6 +25,7 @@ public:
         static GameClient _instance;
         return _instance;
     }
+    ~GameClient();
     QString getCurrentUserID() const { return m_currentUserID; }
 
     void connectToServer(const QString &ip, quint16 port);
@@ -85,17 +86,18 @@ signals:
    void friendStatusChanged(const QString& username, const QString& status);
    void changePasswordSuccess();
     void changePasswordFailed(const QString &msg);
-     void gameQuestionReceived(int matchId, QString questionNum, QString questionId, 
-                              QString questionText, int timeLimit);
+     
     void answerResultReceived(bool correct, int pointsEarned, int totalScore);
-    void nextQuestionReceived(QString questionNum, QString questionId, 
-                             QString questionText, int timeLimit);
+   
     void gameScoresUpdated(QList<QPair<QString, int>> scores);
     void gameEnded(QList<QPair<QString, int>> rankings, QString winnerId);
-    
-
+   void gameQuestionReceived(int matchId, QString questionNum, QString questionId, QString questionText, QString options, int roundId, int timeLimit);
+    // 2. Nhận câu hỏi tiếp theo (Đủ 6 tham số - không cần matchId)
+    void nextQuestionReceived(int matchId, QString questionNum, QString questionId, QString questionText, QString options, int roundId, int timeLimit);
 private slots:
     void onReadyRead();
+    void onSocketConnected();    // Hàm xử lý nội bộ khi kết nối thành công
+    void onSocketDisconnected();
 
 private:
     GameClient();

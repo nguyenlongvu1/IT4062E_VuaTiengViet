@@ -66,14 +66,14 @@ MainWindow::MainWindow(QWidget *parent)
 
     // 5. Kết nối Game Flow
     // Khi nhận được câu hỏi đầu tiên -> chuyển sang GameWidget
-    connect(&GameClient::instance(), &GameClient::gameQuestionReceived, 
-            [=](int matchId, QString questionNum, QString questionId, QString questionText, int timeLimit) {
+    connect(&GameClient::instance(), &GameClient::gameQuestionReceived, this, 
+    [=](int matchId, QString questionNum, QString questionId, QString questionText, QString options, int roundId, int timeLimit) {
+        // Code xử lý UI
         if (questionNum.toInt() == 1) {
-            // Câu hỏi đầu tiên -> chuyển sang màn game
-            m_stackedWidget->setCurrentWidget(gameScreen);
+             m_stackedWidget->setCurrentWidget(gameScreen);
         }
-        gameScreen->startGame(matchId, questionNum, questionId, questionText, timeLimit);
-    });
+        gameScreen->startGame(matchId, questionNum, questionId, questionText, options, roundId, timeLimit);
+});
     
 
     // Nhận kết quả trả lời -> cập nhật điểm trên GameWidget
@@ -81,12 +81,27 @@ MainWindow::MainWindow(QWidget *parent)
             gameScreen, &GameWidget::showAnswerResult);
 
     // Nhận câu tiếp theo
-        connect(&GameClient::instance(), &GameClient::nextQuestionReceived,
-            gameScreen, &GameWidget::showNextQuestion);
+        connect(&GameClient::instance(), &GameClient::nextQuestionReceived, this, 
+    // THÊM "int matchId" VÀO ĐẦU DANH SÁCH THAM SỐ
+    [=](int matchId, QString questionNum, QString questionId, QString questionText, QString options, int roundId, int timeLimit) {
+        
+        // Nếu hàm showNextQuestion của bạn không cần matchId, bạn cứ để matchId ở đó nhưng không dùng.
+        // Hoặc nếu cần thì truyền vào.
+        
+        if (gameScreen) {
+             // Giữ nguyên các tham số truyền vào hàm hiển thị (trừ khi hàm này cũng thay đổi)
+             gameScreen->showNextQuestion(questionNum, questionId, questionText, options, roundId, timeLimit);
+        }
+    }
+);
 
         // Cập nhật bảng điểm
-        connect(&GameClient::instance(), &GameClient::gameScoresUpdated,
-            gameScreen, &GameWidget::updateScores);
+        connect(&GameClient::instance(), &GameClient::gameScoresUpdated, 
+            this, [=](const QList<QPair<QString, int>> &scores) {
+        if (gameScreen) {
+            gameScreen->updateScores(scores);
+        }
+    });
 
     // Khi player submit answer -> gửi lên server
     connect(gameScreen, &GameWidget::answerSubmitted, 
@@ -95,12 +110,23 @@ MainWindow::MainWindow(QWidget *parent)
     });
 
     // Khi game kết thúc -> hiện kết quả
-    connect(&GameClient::instance(), &GameClient::gameEnded,
-            [=](const QList<QPair<QString, int>>& rankings, const QString& winnerId) {
-        resultScreen->showResults(rankings, winnerId);
-        m_stackedWidget->setCurrentWidget(resultScreen);
-    });
+    // MainWindow.cpp
 
+// Tìm đến đoạn connect gameEnded trong Constructor
+connect(&GameClient::instance(), &GameClient::gameEnded,
+        [=](const QList<QPair<QString, int>>& rankings, const QString& winnerId) {
+    
+    // 1. Dừng màn chơi game ngay lập tức (Timer, Input)
+    if (gameScreen) {
+        gameScreen->stopGame();
+    }
+
+    // 2. Hiển thị kết quả
+    resultScreen->showResults(rankings, winnerId);
+    
+    // 3. Chuyển màn hình
+    m_stackedWidget->setCurrentWidget(resultScreen);
+});
     // Khi click Return to Lobby -> về HomeWidget
     connect(resultScreen, &ResultWidget::returnToLobby, [=]() {
         m_stackedWidget->setCurrentWidget(homeScreen);
