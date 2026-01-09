@@ -17,6 +17,8 @@ private:
     FriendRoomWidget *friendRoomWidget;
     QString m_currentUsername;
     QTemporaryFile* m_tempMusicFile = nullptr;
+    QString currentRoomId;
+
 };
 
 #endif // MAINWINDOW_H

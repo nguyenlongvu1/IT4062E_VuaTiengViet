@@ -104,14 +104,14 @@ Message RoomService::joinRoom(const Message& msg) {
         Room& room = roomTable[roomId];
 
         // Nếu user đã ở trong phòng này rồi thì trả về success, không thêm trùng
-        auto dup = std::find(room.players.begin(), room.players.end(), userId);
-        if (dup != room.players.end()) {
-            resp.params["status"] = "success";
-            resp.params["room_id"] = std::to_string(roomId);
-            resp.params["count"] = std::to_string(room.players.size());
-            std::cout << "[JOIN_ROOM] User " << userId << " is already in room " << roomId << " (Count: " << room.players.size() << ")" << std::endl;
-            return resp;
-        }
+        // auto dup = std::find(room.players.begin(), room.players.end(), userId);
+        // if (dup != room.players.end()) {
+        //     resp.params["status"] = "success";
+        //     resp.params["room_id"] = std::to_string(roomId);
+        //     resp.params["count"] = std::to_string(room.players.size());
+        //     std::cout << "[JOIN_ROOM] User " << userId << " is already in room " << roomId << " (Count: " << room.players.size() << ")" << std::endl;
+        //     return resp;
+        // }
 
         // Kiểm tra phòng đầy
         if (room.players.size() >= 3) {
@@ -137,22 +137,22 @@ Message RoomService::joinRoom(const Message& msg) {
             }
             
             // AUTO CREATE MATCH KHI ĐỦ 3 NGƯỜI -> broadcast MATCH_CREATED
-            if (room.players.size() == 3) {
-                std::cout << "[INFO] Room " << roomId << " FULL! Auto-creating match...\n";
-                Message req;
-                req.command = "CREATE_MATCH";
-                req.params["room_id"] = std::to_string(roomId);
-                Message m = MatchService::createMatchFromRoom(req);
-                if (m.command == "MATCH_CREATED") {
-                    // Build payload to notify clients
-                    std::string payload = "COMMAND: MATCH_CREATED\n\nmatch_id=" + m.params["match_id"] + ";room_id=" + m.params["room_id"] + ";players=" + m.params["players"];
-                    for (int pid : room.players) {
-                        srv->sendToUser(pid, payload);
-                    }
-                } else {
-                    std::cout << "[WARN] Auto create match failed: " << m.params["msg"] << "\n";
-                }
-            }
+            // if (room.players.size() == 3) {
+            //     std::cout << "[INFO] Room " << roomId << " FULL! Auto-creating match...\n";
+            //     Message req;
+            //     req.command = "CREATE_MATCH";
+            //     req.params["room_id"] = std::to_string(roomId);
+            //     Message m = MatchService::createMatchFromRoom(req);
+            //     if (m.command == "MATCH_CREATED") {
+            //         // Build payload to notify clients
+            //         std::string payload = "COMMAND: MATCH_CREATED\n\nmatch_id=" + m.params["match_id"] + ";room_id=" + m.params["room_id"] + ";players=" + m.params["players"];
+            //         for (int pid : room.players) {
+            //             srv->sendToUser(pid, payload);
+            //         }
+            //     } else {
+            //         std::cout << "[WARN] Auto create match failed: " << m.params["msg"] << "\n";
+            //     }
+            // }
         }
 
         resp.params["status"] = "success";

@@ -82,19 +82,16 @@ signals:
     void matchStartedDirectly(QString matchId, QString roomId);
     void userInfoReceived(const QString& username, int points, const QString& rankName);
     void leaderboardReceived(const QList<RankItem> &items);
-    void friendStatusChanged(const QString& username, const QString& status);
-    void changePasswordSuccess();
+   void friendStatusChanged(const QString& username, const QString& status);
+   void changePasswordSuccess();
     void changePasswordFailed(const QString &msg);
-    
-    // Game signals
-    void gameQuestionReceived(int matchId, QString questionNum, QString questionId, 
+     void gameQuestionReceived(int matchId, QString questionNum, QString questionId, 
                               QString questionText, int timeLimit);
     void answerResultReceived(bool correct, int pointsEarned, int totalScore);
     void nextQuestionReceived(QString questionNum, QString questionId, 
                              QString questionText, int timeLimit);
     void gameScoresUpdated(QList<QPair<QString, int>> scores);
     void gameEnded(QList<QPair<QString, int>> rankings, QString winnerId);
-    
     
 
 private slots:

@@ -3,8 +3,6 @@
 #include "RegisterWidget.h"
 #include "HomeWidget.h"
 #include "GameClient.h"
-#include "GameWidget.h"
-#include "ResultWidget.h"
 #include <QStackedWidget>
 #include <QLabel>
 #include <QMessageBox>
@@ -12,6 +10,8 @@
 #include "../ui/room/FriendRoomWidget.h"
 #include <QTemporaryFile>
 #include "../utils/AudioManager.h"
+#include "GameWidget.h"
+#include "ResultWidget.h"
 #include <QScreen>
 
 MainWindow::MainWindow(QWidget *parent)
@@ -19,6 +19,7 @@ MainWindow::MainWindow(QWidget *parent)
 {
     this->setMinimumSize(1024, 768); 
     this->resize(1024, 768);
+    this->showFullScreen();
     m_stackedWidget = new QStackedWidget(this);
     setCentralWidget(m_stackedWidget);
 
@@ -30,12 +31,12 @@ MainWindow::MainWindow(QWidget *parent)
     ResultWidget *resultScreen = new ResultWidget(this);
     
 
-    // 2. Thêm vào Stack (Thứ tự index: 0, 1, 2, 3, 4)
+    // 2. Thêm vào Stack (Thứ tự index: 0, 1, 2)
     m_stackedWidget->addWidget(loginScreen);    // Index 0
     m_stackedWidget->addWidget(registerScreen); // Index 1
-    m_stackedWidget->addWidget(homeScreen);     // Index 2
-    m_stackedWidget->addWidget(gameScreen);     // Index 3
-    m_stackedWidget->addWidget(resultScreen);   // Index 4
+    m_stackedWidget->addWidget(homeScreen);// Index 2
+     m_stackedWidget->addWidget(gameScreen);     // Index 3
+    m_stackedWidget->addWidget(resultScreen);
 
     // 3. Xử lý điều hướng
     connect(loginScreen, &LoginWidget::switchToRegister, [=](){
@@ -55,9 +56,7 @@ MainWindow::MainWindow(QWidget *parent)
         // Quay về màn hình Login
         m_stackedWidget->setCurrentWidget(loginScreen);
     });
-
-    // Khi match được server tạo thành công, chuyển ngay sang màn game (chờ câu hỏi)
-    connect(&GameClient::instance(), &GameClient::matchStartedDirectly,
+     connect(&GameClient::instance(), &GameClient::matchStartedDirectly,
             [=](QString matchId, QString roomId) {
         Q_UNUSED(matchId);
         Q_UNUSED(roomId);
@@ -74,6 +73,7 @@ MainWindow::MainWindow(QWidget *parent)
         }
         gameScreen->startGame(matchId, questionNum, questionId, questionText, timeLimit);
     });
+    
 
     // Nhận kết quả trả lời -> cập nhật điểm trên GameWidget
     connect(&GameClient::instance(), &GameClient::answerResultReceived,
@@ -104,6 +104,7 @@ MainWindow::MainWindow(QWidget *parent)
     connect(resultScreen, &ResultWidget::returnToLobby, [=]() {
         m_stackedWidget->setCurrentWidget(homeScreen);
     });
+    
 
     // 4. Kết nối tới Server khi mở App
     GameClient::instance().connectToServer("127.0.0.1", 8080);

@@ -284,7 +284,7 @@ void GameClient::onReadyRead() {
             }
             emit leaderboardReceived(items);
         }
-        else if (response.contains("COMMAND: MATCH_CREATED")) {
+        else if (response.contains(CMD_MATCH_CREATED)) {
             QString matchId = getPayloadValue("match_id");
             QString roomId = getPayloadValue("room_id"); 
             QString players = getPayloadValue("players");
@@ -297,11 +297,8 @@ void GameClient::onReadyRead() {
                                 .arg(roomId)
                                 .arg(players);
             sendMessage("START_MATCH", payload);
-
             emit matchStartedDirectly(matchId, roomId);
         }
-        
-        // Game question received
         else if (response.contains("COMMAND: GAME_QUESTION")) {
             int matchId = getPayloadValue("match_id").toInt();
             QString questionNum = getPayloadValue("question_num");
@@ -468,7 +465,6 @@ void GameClient::sendStartGame(int roomId) {
     QString payload = QString("room_id=%1").arg(roomId);
     sendMessage(CMD_CREATE_MATCH, payload); 
 }
-
 void GameClient::sendAnswer(int matchId, const QString &answer, int timeElapsed) {
     if (!isConnected()) return;
     qDebug() << "[CLIENT] Sending answer:" << answer << "for match" << matchId;
