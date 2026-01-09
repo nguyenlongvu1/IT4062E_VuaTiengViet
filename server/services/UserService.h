@@ -13,6 +13,7 @@ public:
     static Message searchUsers(const Message& msg);
     static Message getLeaderboard(const Message& msg);
     static Message getMatchHistory(const Message &msg);
+    static Message getHistory(const Message& msg);
 
 private:
     // Rate limiting constants

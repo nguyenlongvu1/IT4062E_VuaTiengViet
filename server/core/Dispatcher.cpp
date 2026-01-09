@@ -81,6 +81,12 @@ Message Dispatcher::handleCommand(const Message& msg, ClientHandler*) {
     else if (msg.command == "SURRENDER_MATCH") {
         return GameService::surrenderMatch(msg);
     }
+    else if (msg.command == "GET_HISTORY") {
+        resp = UserService::getHistory(msg);
+    }
+    else if (msg.command == "GET_MATCH_LOG") {
+        return GameService::getMatchLog(msg);
+    }
     else {
         resp.command = "ERR";
         resp.params["msg"] = "UnknownCommand: " + msg.command;

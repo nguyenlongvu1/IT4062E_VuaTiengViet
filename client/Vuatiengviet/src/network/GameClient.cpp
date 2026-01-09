@@ -375,7 +375,10 @@ void GameClient::onReadyRead() {
         else if (response.contains(CMD_UPDATE_STATUS_NOTIFY)) {
             emit friendStatusChanged(getPayloadValue("username"), getPayloadValue("status"));
         }
-        
+        else if (response.contains("COMMAND: HISTORY_DATA")) {
+            QString data = getPayloadValue("data");
+            emit historyReceived(data);
+        }
         // 6. LEADERBOARD
         else if (response.contains(CMD_LEADERBOARD_RES)) {
             QList<RankItem> items;
@@ -396,6 +399,17 @@ void GameClient::onReadyRead() {
             qDebug() << "[CLIENT] Nhận lệnh ELIMINATED -> Bị loại!";
             emit playerEliminated(); // Bắn tín hiệu sang MainWindow
         }
+        else if (response.contains("COMMAND: MATCH_LOG_DATA")) {
+    // Nếu bạn dùng hàm split hoặc regex để lấy data, hãy cẩn thận với tiền tố độ dài
+    QString fullData = getPayloadValue("data"); 
+    
+    // Nếu fullData đang là "387|1|kết cục...", chúng ta cần bỏ số 387 và dấu | đầu tiên
+    if (fullData.contains("|")) {
+        fullData = fullData.mid(fullData.indexOf("|") + 1);
+    }
+    
+    emit matchLogReceived(fullData);
+}
     }
 }
 void GameClient::sendSurrender(int matchId) {
@@ -408,4 +422,17 @@ void GameClient::sendSurrender(int matchId) {
                       .arg(m_currentUserID);
                       
     sendMessage("SURRENDER_MATCH", payload);
+}
+void GameClient::sendGetHistory() {
+    sendMessage("GET_HISTORY", "user_id=" + m_currentUserID);
+}
+void GameClient::sendGetMatchLog(int matchId) {
+    if (!isConnected()) return;
+    
+    // THÊM user_id vào payload để Server biết lấy log của ai
+    QString payload = QString("match_id=%1;user_id=%2")
+                      .arg(matchId)
+                      .arg(m_currentUserID);
+                      
+    sendMessage("GET_MATCH_LOG", payload);
 }

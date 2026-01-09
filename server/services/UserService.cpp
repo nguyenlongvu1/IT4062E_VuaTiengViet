@@ -7,6 +7,8 @@
 #include "../database/FriendDAO.h"
 #include "../core/Server.h"
 #include "../core/ClientHandler.h"
+#include "../database/MatchDAO.h" 
+#include <vector>
 // Helper: Unified error response
 Message UserService::createErrorResponse(const std::string& errorCode, const std::string& errorMsg) {
     Message resp;
@@ -240,5 +242,36 @@ Message UserService::getLeaderboard(const Message& msg) {
     }
 
     resp.params["data"] = payload;
+    return resp;
+}
+Message UserService::getHistory(const Message& msg) {
+    Message resp;
+    
+    // 1. Kiểm tra input
+    if (msg.params.find("user_id") == msg.params.end()) {
+        resp.command = "ERR";
+        resp.params["msg"] = "Missing user_id";
+        return resp;
+    }
+
+    // 2. Gọi DAO lấy dữ liệu
+    int userId = std::stoi(msg.params.at("user_id"));
+    std::vector<MatchLogItem> history = MatchDAO::getHistoryByUser(userId);
+
+    // 3. Xử lý logic ghép chuỗi (Format dữ liệu)
+    std::stringstream ss;
+    for (const auto& item : history) {
+        // Format: matchId|round|question|answer|points;...
+        ss << item.matchId << "|" 
+           << item.roundId << "|" 
+           << item.questionText << "|" 
+           << item.userAnswer << "|" 
+           << item.points << ";";
+    }
+
+    // 4. Đóng gói phản hồi
+    resp.command = "HISTORY_DATA";
+    resp.params["data"] = ss.str();
+    
     return resp;
 }

@@ -1,6 +1,7 @@
 #include "GameService.h"
 #include "../database/QuestionDAO.h"
 #include "../database/UserDAO.h"
+#include "../database/MatchDAO.h"
 #include <iostream>
 #include <sstream>
 #include <algorithm>
@@ -163,6 +164,15 @@ Message GameService::submitAnswer(const Message &msg) {
         game.scores[userId] += points;
     }
     game.answered[userId] = true;
+    MatchDAO::saveMove(
+        matchId, 
+        game.currentRound, 
+        currQ.id, 
+        userId, 
+        answer, 
+        isCorrect, 
+        points
+    );
 
     // 3. Kiểm tra đủ người trả lời chưa
     int answeredCount = 0;
@@ -200,6 +210,7 @@ Message GameService::submitAnswer(const Message &msg) {
     // ========================================================================
     // --- LOGIC LOẠI NGƯỜI (BATTLE ROYALE) ---
     if (nextRoundNeeded) {
+        int scoreChange = 0;
         std::vector<std::pair<int, int>> rankList;
         // Chỉ lấy những người ĐANG CHƠI (chưa bị loại) để xét duyệt
         for (int pid : game.players) {
@@ -216,15 +227,26 @@ Message GameService::submitAnswer(const Message &msg) {
         // Nếu vòng 1 và còn >= 3 người -> Loại người bét (rankList[0])
         if (game.currentRound == 1 && rankList.size() >= 3) {
             eliminatedId = rankList[0].first;
+            scoreChange = -20;
+            UserDAO::addPoints(eliminatedId, scoreChange);
+            
+            MatchDAO::updateMatchScore(matchId, eliminatedId, scoreChange, (int)rankList.size());
+
+
         }
         // Nếu vòng 2 và còn >= 2 người -> Loại người bét (rankList[0])
         else if (game.currentRound == 2 && rankList.size() >= 2) {
             eliminatedId = rankList[0].first;
+            scoreChange = 0; // Điểm biến động
+    
+    UserDAO::addPoints(eliminatedId, scoreChange);
+    
+    // THÊM DÒNG NÀY: Cập nhật MatchPlayers cho người bị loại vòng 2
+    MatchDAO::updateMatchScore(matchId, eliminatedId, scoreChange, (int)rankList.size());
         }
 
         if (eliminatedId != -1) {
-            if (game.currentRound == 1) UserDAO::addPoints(eliminatedId, -20); // Trừ 20
-            else UserDAO::addPoints(eliminatedId, 0); // Cộng 0
+           UserDAO::addPoints(eliminatedId, scoreChange);
 
             // Xóa người chơi khỏi danh sách
             auto it = std::remove(game.players.begin(), game.players.end(), eliminatedId);
@@ -259,6 +281,7 @@ Message GameService::submitAnswer(const Message &msg) {
             int totalReward = 20 + scoreR3;
             
             UserDAO::addPoints(winnerId, totalReward);
+            MatchDAO::updateMatchScore(matchId, winnerId, totalReward, 1);
             std::cout << "[GAME] Winner User " << winnerId << " (+20 rank + " << scoreR3 << " bonus)\n";
         }
 
@@ -415,5 +438,29 @@ Message GameService::surrenderMatch(const Message &msg) {
         activeGames.erase(matchId);
     }
 
+    return resp;
+}
+Message GameService::getMatchLog(const Message& msg) {
+    Message resp;
+    resp.command = "MATCH_LOG_DATA";
+
+    try {
+        int matchId = std::stoi(msg.params.at("match_id"));
+        int userId = std::stoi(msg.params.at("user_id")); 
+
+        std::vector<MatchLogItem> details = MatchDAO::getMatchDetails(matchId, userId);
+        
+        std::stringstream ss;
+        for (const auto& item : details) {
+            // Thay dấu ; cuối dòng bằng \n
+            ss << item.roundId << "|" 
+               << item.userAnswer << "|" 
+               << (item.isCorrect ? "ĐÚNG" : "SAI") << "|" 
+               << item.points << "\n"; // Dùng \n ở đây
+        }
+        resp.params["data"] = ss.str();
+    } catch (...) {
+        resp.params["data"] = "EMPTY";
+    }
     return resp;
 }

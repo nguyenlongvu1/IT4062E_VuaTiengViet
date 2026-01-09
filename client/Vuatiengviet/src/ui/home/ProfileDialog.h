@@ -12,6 +12,12 @@ public:
 private:
     void setupUi(const QString &username, int score, const QString &rankName);
     QPoint m_dragPosition;
+    class QTableWidget* m_historyTable;
+
+private slots:
+    // Slot để cập nhật dữ liệu từ Server
+    void onHistoryReceived(const QString &data);
+    void onMatchLogReceived(const QString &data);
 
 protected:
     void paintEvent(QPaintEvent *event) override;

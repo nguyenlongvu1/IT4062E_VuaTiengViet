@@ -9,4 +9,5 @@ public:
     static Message startMatch(const Message &msg);
     static void forfeitMatch(int matchId);
     static Message surrenderMatch(const Message &msg);
+    static Message getMatchLog(const Message& msg);
 };

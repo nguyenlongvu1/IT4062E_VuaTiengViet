@@ -3,6 +3,7 @@
 #include <sqlite3.h>
 #include <iostream>
 #include <vector>
+#include <string>
 
 int MatchDAO::createMatch(int rankId, const std::vector<int> &players) {
     sqlite3 *db = DB::getHandle();
@@ -115,4 +116,107 @@ std::vector<int> MatchDAO::getQuestionsForMatch(int matchId, int round) {
     }
     sqlite3_finalize(stmt);
     return qs;
+}
+bool MatchDAO::saveMove(int matchId, int roundId, int questionId, int userId, 
+                        const std::string& answer, bool isCorrect, int points) {
+    sqlite3* db = DB::getHandle();
+    const char* sql = "INSERT INTO Match_Log (match_id, round_id, question_id, user_id, user_answer, is_correct, points_earned) VALUES (?, ?, ?, ?, ?, ?, ?);";
+    
+    sqlite3_stmt* stmt;
+    if (sqlite3_prepare_v2(db, sql, -1, &stmt, nullptr) != SQLITE_OK) return false;
+
+    sqlite3_bind_int(stmt, 1, matchId);
+    sqlite3_bind_int(stmt, 2, roundId);
+    sqlite3_bind_int(stmt, 3, questionId);
+    sqlite3_bind_int(stmt, 4, userId);
+    sqlite3_bind_text(stmt, 5, answer.c_str(), -1, SQLITE_TRANSIENT);
+    sqlite3_bind_int(stmt, 6, isCorrect ? 1 : 0);
+    sqlite3_bind_int(stmt, 7, points);
+
+    bool success = (sqlite3_step(stmt) == SQLITE_DONE);
+    sqlite3_finalize(stmt);
+    return success;
+}
+
+std::vector<MatchLogItem> MatchDAO::getHistoryByUser(int userId) {
+    std::vector<MatchLogItem> history;
+    sqlite3* db = DB::getHandle();
+    
+    // Join bảng Match_Log với Questions để lấy nội dung câu hỏi
+    const char* sql = R"(
+        SELECT l.match_id, l.round_id, q.content, l.user_answer, l.points_earned, l.created_at
+        FROM Match_Log l
+        LEFT JOIN Questions q ON l.question_id = q.question_id
+        WHERE l.user_id = ?
+        ORDER BY l.created_at DESC
+        LIMIT 50;
+    )";
+
+    sqlite3_stmt* stmt;
+    if (sqlite3_prepare_v2(db, sql, -1, &stmt, nullptr) == SQLITE_OK) {
+        sqlite3_bind_int(stmt, 1, userId);
+        while (sqlite3_step(stmt) == SQLITE_ROW) {
+            MatchLogItem item;
+            item.matchId = sqlite3_column_int(stmt, 0);
+            item.roundId = sqlite3_column_int(stmt, 1);
+            
+            const char* qText = (const char*)sqlite3_column_text(stmt, 2);
+            item.questionText = qText ? qText : "Unknown";
+            
+            const char* ans = (const char*)sqlite3_column_text(stmt, 3);
+            item.userAnswer = ans ? ans : "";
+            
+            item.points = sqlite3_column_int(stmt, 4);
+            
+            const char* time = (const char*)sqlite3_column_text(stmt, 5);
+            item.timestamp = time ? time : "";
+
+            history.push_back(item);
+        }
+    }
+    sqlite3_finalize(stmt);
+    return history;
+}
+void MatchDAO::updateMatchScore(int matchId, int userId, int scoreChange, int rankPos) {
+    sqlite3* db = DB::getHandle();
+    std::string sql = "UPDATE MatchPlayers SET match_score = ?, rank_position = ? WHERE match_id = ? AND user_id = ?;";
+    
+    sqlite3_stmt* stmt;
+    if (sqlite3_prepare_v2(db, sql.c_str(), -1, &stmt, nullptr) == SQLITE_OK) {
+        sqlite3_bind_int(stmt, 1, scoreChange);
+        sqlite3_bind_int(stmt, 2, rankPos);
+        sqlite3_bind_int(stmt, 3, matchId);
+        sqlite3_bind_int(stmt, 4, userId);
+        sqlite3_step(stmt);
+    }
+    sqlite3_finalize(stmt);
+}
+std::vector<MatchLogItem> MatchDAO::getMatchDetails(int matchId, int userId) {
+    std::vector<MatchLogItem> details;
+    sqlite3* db = DB::getHandle();
+    if (!db) return details;
+
+    sqlite3_stmt* stmt;
+    // Chỉ lấy: Round, Câu trả lời, Trạng thái (is_correct) và Điểm
+    std::string sql = "SELECT round_id, user_answer, is_correct, points_earned "
+                      "FROM Match_Log "
+                      "WHERE match_id = ? AND user_id = ? "
+                      "ORDER BY log_id ASC";
+
+    if (sqlite3_prepare_v2(db, sql.c_str(), -1, &stmt, NULL) == SQLITE_OK) {
+        sqlite3_bind_int(stmt, 1, matchId);
+        sqlite3_bind_int(stmt, 2, userId);
+        
+        while (sqlite3_step(stmt) == SQLITE_ROW) {
+            MatchLogItem item;
+            item.roundId = sqlite3_column_int(stmt, 0);
+            const char* ans = (const char*)sqlite3_column_text(stmt, 1);
+            item.userAnswer = ans ? ans : "[Bỏ trống]";
+            item.isCorrect = sqlite3_column_int(stmt, 2); // Lấy 0 hoặc 1
+            item.points = sqlite3_column_int(stmt, 3);
+            details.push_back(item);
+        }
+    }
+    sqlite3_finalize(stmt);
+    return details;
 }

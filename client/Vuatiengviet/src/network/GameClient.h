@@ -56,7 +56,8 @@ public:
     void sendChangePassword(const QString &oldPass, const QString &newPass);
     void sendAnswer(int matchId, const QString &answer, int timeElapsed);
     void sendSurrender(int matchId);
-  
+    void sendGetHistory();
+    void sendGetMatchLog(int matchId);
 
 signals:
     void connected();
@@ -97,10 +98,13 @@ signals:
     void nextQuestionReceived(int matchId, QString questionNum, QString questionId, QString questionText, QString options, int roundId, int timeLimit);
     void playerEliminated();
     void gameScoresUpdated(const QList<QPair<QString, QString>> &scores);
+    void historyReceived(const QString &historyData);
+    void matchLogReceived(const QString &data);
 private slots:
     void onReadyRead();
     void onSocketConnected();    // Hàm xử lý nội bộ khi kết nối thành công
     void onSocketDisconnected();
+    
 
 private:
     GameClient();
