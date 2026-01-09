@@ -40,6 +40,30 @@ FriendRoomWidget::FriendRoomWidget(QString myUsername, bool isHost, QWidget *par
     if (GameClient::instance().isConnected()) {
         GameClient::instance().sendGetRoomInfo();
     }
+    connect(&GameClient::instance(), &GameClient::matchStartedDirectly, this, [=](QString matchId, QString roomId) {
+       Q_UNUSED(matchId);
+        Q_UNUSED(roomId);
+
+        qDebug() << "[FriendRoomWidget] Server bao START -> Tu dong dong cua so.";
+
+        // Ngắt kết nối để không nhận thêm tin rác
+        GameClient::instance().disconnect(this);
+
+        // Nếu widget đang nằm trong một QDialog (ví dụ: created via playWithFriend),
+        // đóng dialog bằng accept() để toàn bộ cửa sổ phòng sẽ được đóng.
+        QWidget *p = this->parentWidget();
+        if (p) {
+            QDialog *dlg = qobject_cast<QDialog*>(p);
+            if (dlg) {
+                dlg->accept();
+                return;
+            }
+        }
+
+        // Nếu không nằm trong dialog, đóng và giải phóng widget như trước.
+        this->close();
+        this->deleteLater();
+    });
 }
 
 // Helper function to create a styled slot container
@@ -350,17 +374,17 @@ void FriendRoomWidget::setupUi() {
     connect(btnLeave, &GameButton::clicked, this, &FriendRoomWidget::onLeaveBtnClicked);
     connect(btnJoinRoom, &GameButton::clicked, this, &FriendRoomWidget::onJoinRoomClicked);
     connect(btnAction, &GameButton::clicked, this, [=](){
-        if (m_isHost) {
-        emit startGame();   // 🔥 thông báo cho MainWindow
-    } 
+        // Khóa nút tránh spam
+        btnAction->setEnabled(false);
+
         QString text = lblRoomID->text(); 
-        // Logic to extract ID: "Phòng ID: 12345" -> "12345"
         int roomId = text.split(":").last().trimmed().toInt();
+        
         if (roomId > 0) {
+            qDebug() << "[UI] Host gui lenh START -> Cho Server phan hoi...";
+            // CHỈ GỬI LỆNH - KHÔNG ĐÓNG - KHÔNG HIDE Ở ĐÂY
             GameClient::instance().sendStartGame(roomId);
-        } else {
-            QMessageBox::warning(this, "Lỗi", "Không tìm thấy ID phòng hợp lệ!");
-        }
+        } 
     });
 }
 
