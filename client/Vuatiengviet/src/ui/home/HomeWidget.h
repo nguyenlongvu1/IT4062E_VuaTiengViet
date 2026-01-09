@@ -32,6 +32,7 @@ protected:
 
 signals:
     void logout();       // Signal đăng xuất
+    void signalStartGame(QString matchId, QString roomId);
  
 
 private:

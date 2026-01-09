@@ -4,13 +4,13 @@
 #include <mutex>
 #include <sstream>
 #include <iostream>
+#include "../services/GameService.h"
 #include <algorithm> 
 
 static std::queue<int> queuePlayers;
 static std::mutex queue_mutex;
 
 Message MatchmakingService::findMatch(const Message& msg) {
-    // Validate param
     if (msg.params.count("user_id") == 0) {
         Message err; err.command = "ERR"; err.params["msg"] = "Missing user_id"; return err;
     }
@@ -21,11 +21,20 @@ Message MatchmakingService::findMatch(const Message& msg) {
 
     std::lock_guard<std::mutex> lock(queue_mutex);
 
-    // 1. Kiểm tra xem user đã có trong hàng chờ chưa để tránh duplicate
-    queuePlayers.push(userId);
-    std::cout << "[MATCHMAKING] User " << userId << " joined queue. Queue size: " << queuePlayers.size() << std::endl;
+    // --- SỬA 1: CHỐNG DUPLICATE ID TRONG QUEUE ---
+    std::queue<int> checkQueue = queuePlayers;
+    bool alreadyInQueue = false;
+    while(!checkQueue.empty()){
+        if(checkQueue.front() == userId) { alreadyInQueue = true; break; }
+        checkQueue.pop();
+    }
 
-    // 2. Khi đủ 3 người chơi
+    if (!alreadyInQueue) {
+        queuePlayers.push(userId);
+        std::cout << "[MATCHMAKING] User " << userId << " joined queue. Queue size: " << queuePlayers.size() << std::endl;
+    }
+
+    // --- SỬA 2: CHỈ TRẢ VỀ START_MATCH KHI ĐỦ 3 NGƯỜI ---
     if (queuePlayers.size() >= 3) {
         std::vector<int> players;
         for (int i = 0; i < 3; ++i) {
@@ -33,33 +42,29 @@ Message MatchmakingService::findMatch(const Message& msg) {
             queuePlayers.pop();
         }
 
-        // 3. GỌI DAO: Lưu vào DB
         int dbMatchId = MatchDAO::createMatch(rankId, players); 
 
-        // 4. Đóng gói lệnh START_MATCH
         resp.command = "START_MATCH"; 
         resp.params["match_id"] = std::to_string(dbMatchId);
+        resp.params["room_id"] = std::to_string(rankId);
+        resp.params["broadcast"] = "true"; // Để ClientHandler biết đường gửi cho cả 3
         
-        // Tạo danh sách ID để ClientHandler Broadcast
         std::stringstream ss;
         for (size_t i = 0; i < players.size(); ++i) {
             if (i) ss << ",";
             ss << players[i];
         }
+        resp.params["players"] = ss.str(); 
         
-        resp.params["players"] = ss.str();
-        resp.params["broadcast"] = "true"; 
-        
-        std::cout << "[MATCHMAKING] Success! MatchID: " << dbMatchId << " created with players: " << ss.str() << std::endl;
         return resp;
     }
 
-    // Nếu chưa đủ người
+    // Nếu chưa đủ người, CHỈ trả về cho đúng người đang gửi yêu cầu
     resp.command = "FIND_MATCH_WAIT";
     resp.params["status"] = "waiting";
+    resp.params["broadcast"] = "false"; // QUAN TRỌNG: Không broadcast cái này
     return resp;
 }
-
 
 //HÀM HỦY TÌM TRẬN (Để khớp với Dispatcher)
 Message MatchmakingService::cancelMatch(const Message& msg) {

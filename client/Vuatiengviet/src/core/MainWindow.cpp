@@ -58,23 +58,22 @@ MainWindow::MainWindow(QWidget *parent)
         m_stackedWidget->setCurrentWidget(loginScreen);
     });
      connect(&GameClient::instance(), &GameClient::matchStartedDirectly,
-            [=](QString matchId, QString roomId) {
-        Q_UNUSED(matchId);
-        Q_UNUSED(roomId);
-        m_stackedWidget->setCurrentWidget(gameScreen);
-    });
-
+        this, [=](QString matchId, QString roomId) {
+    qDebug() << "[MAIN] Cả 2 máy cùng vào trận! Match:" << matchId;
+    gameScreen->setMatchInfo(matchId, roomId);
+    m_stackedWidget->setCurrentWidget(gameScreen);
+});
     // 5. Kết nối Game Flow
     // Khi nhận được câu hỏi đầu tiên -> chuyển sang GameWidget
-    connect(&GameClient::instance(), &GameClient::gameQuestionReceived, this, 
-    [=](int matchId, QString questionNum, QString questionId, QString questionText, QString options, int roundId, int timeLimit) {
-        // Code xử lý UI
-        if (questionNum.toInt() == 1) {
-             m_stackedWidget->setCurrentWidget(gameScreen);
-        }
-        gameScreen->startGame(matchId, questionNum, questionId, questionText, options, roundId, timeLimit);
+  connect(&GameClient::instance(), &GameClient::gameQuestionReceived, this, 
+[=](int matchId, QString questionNum, QString questionId, QString questionText, QString options, int roundId, int timeLimit) {
+    // Nếu chưa ở màn hình Game, ép chuyển sang
+    if (m_stackedWidget->currentWidget() != gameScreen) {
+        gameScreen->setMatchInfo(QString::number(matchId), "0");
+        m_stackedWidget->setCurrentWidget(gameScreen);
+    }
+    gameScreen->startGame(matchId, questionNum, questionId, questionText, options, roundId, timeLimit);
 });
-    
 
     // Nhận kết quả trả lời -> cập nhật điểm trên GameWidget
     connect(&GameClient::instance(), &GameClient::answerResultReceived,
@@ -167,6 +166,12 @@ connect(&GameClient::instance(), &GameClient::gameEnded,
 
         // (Code cũ của bạn nếu có xử lý hiển thị điểm/rank ở Home thì giữ nguyên)
     });
+    // Thay thế đoạn bị lỗi bằng đoạn này:
+        connect(homeScreen, &HomeWidget::signalStartGame, this, [=](QString matchId, QString roomId) {
+    gameScreen->setMatchInfo(matchId, roomId);
+    m_stackedWidget->setCurrentWidget(gameScreen); 
+    qDebug() << "[MAIN] Chủ phòng bắt đầu trận!";
+});
 
     // 4. Kết nối tới Server khi mở App
     GameClient::instance().connectToServer("127.0.0.1", 8080);

@@ -325,3 +325,10 @@ void GameWidget::setPlayerName(const QString &name) {
         lblPlayerName->setText("👤 " + name); // Thêm icon cho đẹp
     }
 }
+void GameWidget::setMatchInfo(const QString &matchId, const QString &roomId) {
+    // Chuyển matchId từ String sang Int để lưu trữ đồng nhất với các hàm khác
+    this->m_matchId = matchId.toInt();
+    this->m_roomId = roomId;
+    
+    qDebug() << "[GameWidget] MatchInfo updated - ID:" << m_matchId << "Room:" << roomId;
+}

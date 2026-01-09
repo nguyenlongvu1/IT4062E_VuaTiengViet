@@ -246,32 +246,31 @@ Message UserService::getLeaderboard(const Message& msg) {
 }
 Message UserService::getHistory(const Message& msg) {
     Message resp;
-    
-    // 1. Kiểm tra input
+    resp.command = "HISTORY_DATA";
+
     if (msg.params.find("user_id") == msg.params.end()) {
-        resp.command = "ERR";
-        resp.params["msg"] = "Missing user_id";
+        resp.params["data"] = "EMPTY";
         return resp;
     }
 
-    // 2. Gọi DAO lấy dữ liệu
     int userId = std::stoi(msg.params.at("user_id"));
     std::vector<MatchLogItem> history = MatchDAO::getHistoryByUser(userId);
 
-    // 3. Xử lý logic ghép chuỗi (Format dữ liệu)
-    std::stringstream ss;
-    for (const auto& item : history) {
-        // Format: matchId|round|question|answer|points;...
-        ss << item.matchId << "|" 
-           << item.roundId << "|" 
-           << item.questionText << "|" 
-           << item.userAnswer << "|" 
-           << item.points << ";";
+    if (history.empty()) {
+        resp.params["data"] = "EMPTY";
+        return resp;
     }
 
-    // 4. Đóng gói phản hồi
-    resp.command = "HISTORY_DATA";
+    std::stringstream ss;
+    for (const auto& item : history) {
+        // Gửi đầy đủ các trường để Client không bị parse lỗi
+        ss << item.matchId << "|" 
+           << item.roundId << "|" 
+           << (item.questionText.empty() ? "Match" : item.questionText) << "|" 
+           << (item.userAnswer.empty() ? "-" : item.userAnswer) << "|" 
+           << item.points << "\n";
+    }
+
     resp.params["data"] = ss.str();
-    
     return resp;
 }

@@ -1,5 +1,6 @@
 #pragma once
 #include <vector>
+#include <utility>
 #include "../models/Match.h"
 #include <string>
 
@@ -20,7 +21,7 @@ public:
     static std::vector<int> getQuestionsForMatch(int matchId, int round);
     static bool saveMove(int matchId, int roundId, int questionId, int userId, 
                          const std::string& answer, bool isCorrect, int points);
-
+        static bool deleteHistory(int matchId, int userId);
     static std::vector<MatchLogItem> getHistoryByUser(int userId);
     static void updateMatchScore(int matchId, int userId, int scoreChange, int rankPos);
     static std::vector<MatchLogItem> getMatchDetails(int matchId, int userId); // THÊM userId Ở ĐÂY

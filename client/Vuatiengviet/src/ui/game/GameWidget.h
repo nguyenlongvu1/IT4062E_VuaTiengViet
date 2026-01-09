@@ -25,6 +25,7 @@ public:
     void showAnswerResult(bool correct, int pointsEarned, int totalScore);
     void stopGame();
     void setPlayerName(const QString &name);
+    void setMatchInfo(const QString &matchId, const QString &roomId);
     
 
 signals:
@@ -40,7 +41,7 @@ private:
     QPushButton *btnSurrender;
     void setupUi();
     void resetTimer();
-
+    
     // UI Elements
     QLabel *lblQuestionNum;
     QLabel *lblTimer;
@@ -62,6 +63,7 @@ private:
     // Game State
     QTimer *m_timer;
     int m_matchId;
+    QString m_roomId;
     QString m_currentQuestionId;
     int m_timeLimit;
     int m_timeElapsed;

@@ -138,14 +138,15 @@ void ProfileDialog::setupUi(const QString &username, int score, const QString &r
     layout->addWidget(lblHistoryTitle);
 
     // [THAY ĐỔI] Tăng số cột lên 4 để chứa nút Replay
-    m_historyTable = new QTableWidget(0, 3, this); 
-    m_historyTable->setHorizontalHeaderLabels({"ID Trận", "Biến động", "Chi tiết"});
+    m_historyTable = new QTableWidget(0, 4, this); 
+    m_historyTable->setHorizontalHeaderLabels({"ID Trận", "Biến động", "Chi tiết", "Xoá"});
     
     // Cấu hình Header
     QHeaderView *header = m_historyTable->horizontalHeader();
     header->setSectionResizeMode(0, QHeaderView::ResizeToContents); // Vòng // Điểm
     header->setSectionResizeMode(1, QHeaderView::Stretch);          // Đáp án (Giãn hết cỡ)
     header->setSectionResizeMode(2, QHeaderView::Fixed);            // Nút Replay
+    header->setSectionResizeMode(3, QHeaderView::Fixed);            // Nút Xoá
     m_historyTable->setColumnWidth(2, 80);
 
     m_historyTable->verticalHeader()->setVisible(false);
@@ -184,29 +185,35 @@ void ProfileDialog::onHistoryReceived(const QString &data) {
 
     if (data.isEmpty() || data == "EMPTY") return;
 
-    // data từ Server: "ID|Round|Ques|Ans|Points;ID|Round|Ques|Ans|Points;"
-    QStringList matches = data.split(";", Qt::SkipEmptyParts);
+    QStringList matches = data.split("\n", Qt::SkipEmptyParts);
 
     for (const QString &matchStr : matches) {
-        // SỬA: Split bằng dấu '|' thay vì dấu ','
         QStringList parts = matchStr.split("|"); 
-        
-        // Theo format Server: [0]=ID, [1]=Round, [2]=Ques, [3]=Ans, [4]=Points
         if (parts.size() < 5) continue; 
 
         QString matchId = parts[0];
-        int scoreVal = parts[4].toInt(); // Lấy điểm ở vị trí cuối cùng
+        bool exists = false;
+        for (int i = 0; i < m_historyTable->rowCount(); ++i) {
+            if (m_historyTable->item(i, 0)->text() ==  matchId) {
+                exists = true;
+                break;
+            }
+        }
+        if (exists) continue;
+        int scoreVal = parts[4].toInt();
 
-        int row = m_historyTable->rowCount();
-        m_historyTable->insertRow(row);
+        // CHÌA KHÓA: insertRow(0) để đẩy bản ghi mới nhất lên trên cùng
+       int currentRow = m_historyTable->rowCount();
+        m_historyTable->insertRow(currentRow);
+        // int row = 0; 
 
         // CỘT 1: ID TRẬN
         QTableWidgetItem *itemId = new QTableWidgetItem("#" + matchId);
         itemId->setTextAlignment(Qt::AlignCenter);
         itemId->setForeground(QColor("#7f8c8d"));
-        m_historyTable->setItem(row, 0, itemId);
+        m_historyTable->setItem(currentRow, 0, itemId);
 
-        // CỘT 2: BIẾN ĐỘNG (Điểm)
+        // CỘT 2: BIẾN ĐỘNG
         QString scorePrefix = (scoreVal > 0 ? "+" : "");
         QTableWidgetItem *itemScore = new QTableWidgetItem(scorePrefix + QString::number(scoreVal) + " Điểm");
         itemScore->setTextAlignment(Qt::AlignCenter);
@@ -215,21 +222,48 @@ void ProfileDialog::onHistoryReceived(const QString &data) {
         if (scoreVal > 0) itemScore->setForeground(QColor("#2ecc71"));
         else if (scoreVal < 0) itemScore->setForeground(QColor("#e74c3c"));
         else itemScore->setForeground(QColor("#95a5a6"));
-        
-        m_historyTable->setItem(row, 1, itemScore);
+        m_historyTable->setItem(currentRow, 1, itemScore);
 
-        // CỘT 3: NÚT DIỄN BIẾN
-        QPushButton* btnDetail = new QPushButton("DIỄN BIẾN");
+        // CỘT 3: NÚT CHI TIẾT
+        QPushButton* btnDetail = new QPushButton("Xem lại");
         btnDetail->setCursor(Qt::PointingHandCursor);
         btnDetail->setStyleSheet(
-            "QPushButton { background: #34495e; color: white; border-radius: 5px; font-size: 11px; padding: 5px; }"
+            "QPushButton { background: #34495e; color: white; border-radius: 5px; font-size: 10px; padding: 4px; }"
             "QPushButton:hover { background: #2c3e50; }"
         );
-        
-        m_historyTable->setCellWidget(row, 2, btnDetail);
-
+        m_historyTable->setCellWidget(currentRow, 2, btnDetail);
         connect(btnDetail, &QPushButton::clicked, [=]() {
             GameClient::instance().sendGetMatchLog(matchId.toInt());
+        });
+
+        // CỘT 4: NÚT XÓA (MỚI)
+        QPushButton* btnDelete = new QPushButton("XÓA");
+        btnDelete->setCursor(Qt::PointingHandCursor);
+        btnDelete->setStyleSheet(
+            "QPushButton { background: #c0392b; color: white; border-radius: 5px; font-size: 10px; font-weight: bold; }"
+            "QPushButton:hover { background: #e74c3c; }"
+        );
+        m_historyTable->setCellWidget(currentRow, 3, btnDelete);
+        
+        // Logic khi bấm xóa
+        connect(btnDelete, &QPushButton::clicked, [=]() {
+            auto reply = QMessageBox::question(this, "Xác nhận", "Bạn có chắc muốn xóa lịch sử trận này?", 
+                                               QMessageBox::Yes | QMessageBox::No);
+            if (reply == QMessageBox::Yes) {
+                // 1. Gửi lệnh xóa lên Server (Bạn cần định nghĩa hàm này trong GameClient)
+                // GameClient::instance().sendDeleteHistory(matchId.toInt());
+                
+                // 2. Xóa dòng đó trên giao diện ngay lập tức
+                // Lưu ý: Row có thể thay đổi nên ta tìm lại row hiện tại của widget
+                int currentRow = -1;
+                for(int i=0; i < m_historyTable->rowCount(); ++i) {
+                    if(m_historyTable->cellWidget(i, 3) == btnDelete) {
+                        currentRow = i;
+                        break;
+                    }
+                }
+                if(currentRow != -1) m_historyTable->removeRow(currentRow);
+            }
         });
     }
 }

@@ -595,7 +595,7 @@ void HomeWidget::openInbox() {
 }
 void HomeWidget::playRanked() {
     m_radarDialog = new QDialog(this);
-    m_radarDialog->setWindowTitle("Đang tìm đối thủ...");
+    m_radarDialog->setWindowFlags(Qt::Dialog | Qt::FramelessWindowHint);
     m_radarDialog->setFixedSize(400, 500);
     
     QVBoxLayout *layout = new QVBoxLayout(m_radarDialog);
@@ -603,22 +603,21 @@ void HomeWidget::playRanked() {
     layout->setContentsMargins(0, 0, 0, 0);
     layout->addWidget(matchWidget);
 
-    // Kết nối Signal: Khi Server gửi START_MATCH về
-    connect(&GameClient::instance(), &GameClient::matchStartedDirectly, 
-            this, [this](QString matchId, QString roomId) {
-        if (m_radarDialog) m_radarDialog->accept();
-        this->switchToGameScreen(matchId, roomId); 
+    // CHỈ đóng radar khi có trận, KHÔNG gọi switchToGameScreen ở đây 
+    // vì GameClient.cpp sẽ lo việc nhận MatchID thật từ Server
+    connect(matchWidget, &MatchmakingWidget::matchFound, this, [this](QString roomId){
+        if (m_radarDialog) m_radarDialog->accept(); 
     });
 
-    // Kích hoạt gửi lệnh FIND_MATCH lên Server
-    matchWidget->startSearching(); 
+    connect(matchWidget, &MatchmakingWidget::cancelSearchSignal, m_radarDialog, &QDialog::reject);
 
+    matchWidget->startSearching();
     m_radarDialog->exec();
 }
 
 void HomeWidget::switchToGameScreen(QString matchId, QString roomId) {
-    QMessageBox::information(this, "Ghép trận thành công", 
-        QString("Đã lưu vào DB!\nMatch ID: %1\nRoom ID: %2\n\nHệ thống đã bốc sẵn 30 câu hỏi.").arg(matchId).arg(roomId));
     
     qDebug() << "[TEST] San sang vao Game voi MatchID: " << matchId;
+    
+    emit signalStartGame(matchId, roomId);
 }

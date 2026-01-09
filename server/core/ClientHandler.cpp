@@ -9,6 +9,7 @@
 #include <algorithm>
 #include <vector>
 #include <sstream>
+#include "../services/GameService.h"
 
 ClientHandler::ClientHandler(int fd, Server* srv)
     : client_fd(fd), server(srv) {}
@@ -91,6 +92,37 @@ void ClientHandler::run() {
 
             std::string senderPacket = MessageParser::build(response);
             sendMessage(senderPacket);
+        }
+       if (response.command == "START_MATCH") {
+            std::vector<int> players;
+            if (response.params.count("players")) {
+                std::stringstream ss(response.params.at("players"));
+                std::string pid;
+                while (std::getline(ss, pid, ',')) {
+                    if (!pid.empty()) players.push_back(std::stoi(pid));
+                }
+            }
+
+            if (!players.empty()) {
+                // 1. Gửi lệnh START_MATCH cho tất cả 3 người
+                std::string startPacket = MessageParser::build(response);
+                server->sendToUsers(players, startPacket);
+                std::cout << "[GAME] Match " << response.params["match_id"] << " started. Syncing UI...\n";
+
+                // 2. Nghỉ 1.2 giây để Client load màn hình
+                usleep(1200000); 
+
+                // 3. Tự gọi GameService tạo câu hỏi đầu tiên
+                // Vì GameService::startMatch là static nên gọi trực tiếp được (nếu đã include)
+                Message questionMsg = GameService::startMatch(response);
+                std::string qPacket = MessageParser::build(questionMsg);
+                server->sendToUsers(players, qPacket);
+                
+                std::cout << "[GAME] Question 1 sent to all players.\n";
+                
+                // Đánh dấu đã xử lý xong để không gửi đè ở dưới
+                response.command = "NO_RESPONSE"; 
+            }
         }
 
         else {

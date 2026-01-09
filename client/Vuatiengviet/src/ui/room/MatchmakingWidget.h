@@ -24,7 +24,7 @@ signals:
     void cancelSearchSignal(); 
     
     // Signal báo tìm thấy trận (để đóng dialog)
-    void matchFound(QString roomId);
+    void matchFound(const QString &roomId);
 
 public slots:
     // Slot nhận tin từ mạng

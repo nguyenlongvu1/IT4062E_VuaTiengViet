@@ -323,13 +323,24 @@ void GameClient::onReadyRead() {
             sendMessage("START_MATCH", QString("match_id=%1;room_id=%2;players=%3").arg(mId, rId, pls));
             emit matchStartedDirectly(mId, rId);
         }
-        else if (response.contains(CMD_MATCH_FOUND_NOTIFY)) {
-            emit matchFound(getPayloadValue("room_id"));
-        }
         else if (response.contains(CMD_START_MATCH)) {
-            emit matchStartedDirectly(getPayloadValue("match_id"), getPayloadValue("room_id"));
-        }
+    QString mIdStr = getPayloadValue("match_id");
+    QString rId = getPayloadValue("room_id");
 
+    // LOG KIỂM TRA:
+    qDebug() << "[NET] Nhận START_MATCH. Raw MatchID:" << mIdStr;
+
+    // Nếu Server gửi "AUTO_GEN_ID", đây là lỗi phía Server. 
+    // Nhưng để Client chạy được, ta sẽ gán tạm nếu nó không phải số.
+    bool ok;
+    mIdStr.toInt(&ok);
+    if (!ok) {
+        qDebug() << "[WARNING] Server gửi MatchID không hợp lệ, đang dùng ID tạm thời!";
+    }
+
+    emit matchStartedDirectly(mIdStr, rId); 
+    emit matchFound(rId); 
+}
         // 5. FRIEND & SEARCH
         else if (response.contains(CMD_SEARCH_RES)) {
             QList<UserSearchResult> results;

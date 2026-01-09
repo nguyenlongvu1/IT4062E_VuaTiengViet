@@ -142,13 +142,13 @@ std::vector<MatchLogItem> MatchDAO::getHistoryByUser(int userId) {
     std::vector<MatchLogItem> history;
     sqlite3* db = DB::getHandle();
     
-    // Join bảng Match_Log với Questions để lấy nội dung câu hỏi
+    // Lấy match_id và match_score (Biến động điểm) từ bảng MatchPlayers
+    // Sắp xếp match_id DESC để trận mới nhất luôn nằm ở đầu danh sách
     const char* sql = R"(
-        SELECT l.match_id, l.round_id, q.content, l.user_answer, l.points_earned, l.created_at
-        FROM Match_Log l
-        LEFT JOIN Questions q ON l.question_id = q.question_id
-        WHERE l.user_id = ?
-        ORDER BY l.created_at DESC
+        SELECT match_id, match_score 
+        FROM MatchPlayers 
+        WHERE user_id = ? 
+        ORDER BY match_id DESC 
         LIMIT 50;
     )";
 
@@ -158,18 +158,13 @@ std::vector<MatchLogItem> MatchDAO::getHistoryByUser(int userId) {
         while (sqlite3_step(stmt) == SQLITE_ROW) {
             MatchLogItem item;
             item.matchId = sqlite3_column_int(stmt, 0);
-            item.roundId = sqlite3_column_int(stmt, 1);
+            item.points = sqlite3_column_int(stmt, 1); // Đây chính là biến động điểm (match_score)
             
-            const char* qText = (const char*)sqlite3_column_text(stmt, 2);
-            item.questionText = qText ? qText : "Unknown";
-            
-            const char* ans = (const char*)sqlite3_column_text(stmt, 3);
-            item.userAnswer = ans ? ans : "";
-            
-            item.points = sqlite3_column_int(stmt, 4);
-            
-            const char* time = (const char*)sqlite3_column_text(stmt, 5);
-            item.timestamp = time ? time : "";
+            // Các trường này để trống hoặc điền mặc định vì bảng MatchPlayers không có nội dung câu hỏi
+            item.roundId = 1;
+            item.questionText = "Trận đấu #" + std::to_string(item.matchId);
+            item.userAnswer = "";
+            item.timestamp = ""; 
 
             history.push_back(item);
         }
@@ -219,4 +214,19 @@ std::vector<MatchLogItem> MatchDAO::getMatchDetails(int matchId, int userId) {
     }
     sqlite3_finalize(stmt);
     return details;
+}
+bool MatchDAO::deleteHistory(int matchId, int userId) {
+    sqlite3* db = DB::getHandle();
+    // Xóa trong MatchPlayers để mất khỏi danh sách lịch sử
+    const char* sql = "DELETE FROM MatchPlayers WHERE match_id = ? AND user_id = ?;";
+    
+    sqlite3_stmt* stmt;
+    if (sqlite3_prepare_v2(db, sql, -1, &stmt, nullptr) != SQLITE_OK) return false;
+
+    sqlite3_bind_int(stmt, 1, matchId);
+    sqlite3_bind_int(stmt, 2, userId);
+
+    bool success = (sqlite3_step(stmt) == SQLITE_DONE);
+    sqlite3_finalize(stmt);
+    return success;
 }
