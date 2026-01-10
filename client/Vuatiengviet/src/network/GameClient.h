@@ -58,6 +58,7 @@ public:
     void sendSurrender(int matchId);
     void sendGetHistory();
     void sendGetMatchLog(int matchId);
+    void sendGetUserInfoRequest();
 
 signals:
     void connected();
@@ -112,7 +113,7 @@ private:
     void sendMessage(const QString &cmd, const QString &payload);
     QString m_lastCommand;
     QString m_currentUserID;
-    QString m_buffer;           // Thay cho static m_buffer
+    QByteArray m_buffer;        // Thay cho static m_buffer
     QString m_lastQuestionNum;
 };
 

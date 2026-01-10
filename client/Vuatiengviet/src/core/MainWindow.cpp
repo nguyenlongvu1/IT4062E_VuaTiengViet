@@ -163,7 +163,9 @@ connect(&GameClient::instance(), &GameClient::gameEnded,
         if (gameScreen) {
             gameScreen->setPlayerName(username);
         }
-
+        if (homeScreen) {
+            homeScreen->setUserProfile(username, points, rank);
+        }
         // (Code cũ của bạn nếu có xử lý hiển thị điểm/rank ở Home thì giữ nguyên)
     });
     // Thay thế đoạn bị lỗi bằng đoạn này:

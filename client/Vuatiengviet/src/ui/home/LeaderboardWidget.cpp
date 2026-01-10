@@ -19,7 +19,9 @@ LeaderboardWidget::LeaderboardWidget(QWidget *parent) : QWidget(parent) {
 
     // 1. Kết nối với GameClient để nhận dữ liệu
     connect(&GameClient::instance(), &GameClient::leaderboardReceived, 
-            this, &LeaderboardWidget::updateLeaderboard);
+            this, [=](const QList<RankItem> &items) {
+        this->updateLeaderboard(items);
+    });
 
     // 2. Gửi yêu cầu lấy dữ liệu sau 500ms để UI kịp khởi tạo
     QTimer::singleShot(500, [=](){
@@ -296,10 +298,6 @@ void LeaderboardWidget::updateLeaderboard(const QList<RankItem> &items) {
         QListWidgetItem *itemPlaceholder = new QListWidgetItem(listRank);
         QWidget *customWidget = createRankItemWidget(items[i], i);
         
-        // [CỰC KỲ QUAN TRỌNG] 
-        // 64px * 10 dòng = 640px. 
-        // Tổng chiều cao widget 750px - 50px (Tiêu đề) - 40px (Margin) = 660px còn trống.
-        // Set 64px là vừa đẹp.
         itemPlaceholder->setSizeHint(QSize(0, 60)); 
 
         listRank->setItemWidget(itemPlaceholder, customWidget);

@@ -621,3 +621,12 @@ void HomeWidget::switchToGameScreen(QString matchId, QString roomId) {
     
     emit signalStartGame(matchId, roomId);
 }
+void HomeWidget::setUserProfile(const QString &name, int points, const QString &rank) {
+    // Gọi lại hàm setPlayerInfo có sẵn cho đỡ lặp code
+    setPlayerInfo(name, points, rank);
+}
+void HomeWidget::updateLeaderboard(const QList<RankItem> &items) {
+    if (leaderboardWidget) {
+        leaderboardWidget->updateLeaderboard(items);
+    }
+}

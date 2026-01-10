@@ -133,9 +133,6 @@ void GameClient::sendChangePassword(const QString &oldPass, const QString &newPa
     sendMessage(CMD_CHANGE_PASS, QString("user_id=%1;old_password=%2;new_password=%3").arg(m_currentUserID, oldPass, newPass));
 }
 
-// ============================================================================
-// HÀM XỬ LÝ DỮ LIỆU NHẬN TỪ SERVER (RECEIVE) - ĐÃ FIX LỖI UTF-8
-// ============================================================================
 void GameClient::onReadyRead() {
     // static QString m_buffer; // Bộ đệm lưu dữ liệu bị cắt dở
     QByteArray data = m_socket->readAll();
@@ -153,20 +150,36 @@ void GameClient::onReadyRead() {
         // Bỏ phần rác ở đầu
         if (cmdIndex > 0) { m_buffer = m_buffer.mid(cmdIndex); cmdIndex = 0; }
 
-        // Tìm điểm kết thúc của gói tin (là COMMAND tiếp theo hoặc hết buffer)
-        int nextCmdIndex = m_buffer.indexOf("COMMAND: ", 9);
-        QString packet;
-        
-        if (nextCmdIndex == -1) {
-            packet = m_buffer; 
+       int lenKeyIndex = m_buffer.indexOf("LENGTH: ");
+        if (lenKeyIndex == -1) break;
+
+        int headerEndIndex = m_buffer.indexOf("\n\n", lenKeyIndex);
+        if (headerEndIndex == -1) break;
+
+        // Parse độ dài
+        int valueStartIndex = lenKeyIndex + 8;
+        QByteArray lenBytes = m_buffer.mid(valueStartIndex, headerEndIndex - valueStartIndex).trimmed();
+        bool ok;
+        int bodyLength = lenBytes.toInt(&ok);
+
+        if (!ok) {
+            qDebug() << "[NET ERROR] Length sai format!";
             m_buffer.clear();
-        } else {
-            packet = m_buffer.left(nextCmdIndex);
-            m_buffer = m_buffer.mid(nextCmdIndex);
+            break;
         }
 
+        int totalPacketSize = (headerEndIndex + 2) + bodyLength;
+
+        // Kiểm tra ĐỦ KÍCH THƯỚC (So sánh Byte với Byte -> Chính xác 100%)
+        if (m_buffer.size() < totalPacketSize) {
+            break; 
+        }
+
+        // Cắt gói tin (Dạng Byte)
+        QByteArray packetData = m_buffer.left(totalPacketSize);
+        m_buffer = m_buffer.mid(totalPacketSize);
         // --- BẮT ĐẦU PARSE GÓI TIN ---
-        QString response = packet;
+        QString response = QString::fromUtf8(packetData);
         QString payload = "";
         int splitIndex = response.indexOf("\n\n");
         if (splitIndex != -1) payload = response.mid(splitIndex + 2);
@@ -178,7 +191,6 @@ void GameClient::onReadyRead() {
             int p2 = (p1 == -1) ? -1 : t.indexOf('|', p1 + 1);
             if (p1 != -1 && p2 != -1) {
                 QString k = t.left(p1).trimmed();
-                // FIX: Lấy hết phần còn lại, bỏ qua check length để tránh lỗi UTF-8
                 QString v = t.mid(p2 + 1); 
                 payloadMap[k] = v;
             } else {
@@ -260,6 +272,8 @@ void GameClient::onReadyRead() {
                     if (parts.size() == 2) rankings.append({parts[0], parts[1].toInt()});
                 }
                 emit gameEnded(rankings, getPayloadValue("winner_id"));
+                sendGetLeaderboardRequest();
+                sendGetUserInfoRequest();
             }
             // Update Score Realtime
             QString scoresStr = getPayloadValue("scores");
@@ -276,6 +290,19 @@ void GameClient::onReadyRead() {
             emit gameScoresUpdated(scores);
         }
         }
+
+        else if (response.contains("COMMAND: GET_USER_INFO_RES")) {
+    // Server trả về: username, points, rank_name
+    QString u = getPayloadValue("username");
+    int p = getPayloadValue("points").toInt();
+    QString r = getPayloadValue("rank_name");
+
+    // Bắn tín hiệu này ra ngoài. 
+    // UI (MainWindow/HomeWidget) đang lắng nghe tín hiệu này sẽ tự cập nhật text
+    emit userInfoReceived(u, p, r);
+    
+    qDebug() << "[CLIENT] Updated User Info: " << u << " Points:" << p;
+}
 
         // 3. LOGIN & REGISTER
         else if (response.contains(CMD_LOGIN_FAIL) || response.contains("FAIL")) {
@@ -446,4 +473,12 @@ void GameClient::sendGetMatchLog(int matchId) {
                       .arg(m_currentUserID);
                       
     sendMessage("GET_MATCH_LOG", payload);
+}
+// Thêm hàm này vào phần GỬI DỮ LIỆU
+void GameClient::sendGetUserInfoRequest() {
+    if (!isConnected() || m_currentUserID.isEmpty()) return;
+    
+    // Giả sử Server dùng lệnh CMD_GET_USER_INFO để trả về thông tin user
+    // Nếu Server bạn chưa có lệnh này, hãy dùng lại CMD_LOGIN hoặc thêm vào Server
+    sendMessage("GET_USER_INFO", "user_id=" + m_currentUserID);
 }

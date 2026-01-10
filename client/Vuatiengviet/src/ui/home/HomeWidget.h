@@ -21,6 +21,8 @@ public:
     
     // Hàm cập nhật thông tin người chơi (gọi sau khi Login thành công)
     void setPlayerInfo(const QString& name, int score, const QString& rankName);
+    void updateLeaderboard(const QList<RankItem> &items);
+    void setUserProfile(const QString &name, int points, const QString &rank);
 
 protected:
     void paintEvent(QPaintEvent *) override {
