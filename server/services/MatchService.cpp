@@ -18,7 +18,8 @@ Message MatchService::createMatchFromRoom(const Message &msg) {
         resp.params["msg"] = "NoPlayersInRoom";
         return resp;
     }
-    int matchId = MatchDAO::createMatch(roomId, players);
+    // Phòng bạn bè: rank_id = 2 (không tính điểm tích lũy)
+    int matchId = MatchDAO::createMatch(0, players);
     if (!matchId) {
         resp.command = "ERR";
         resp.params["msg"] = "CreateMatchFailed";

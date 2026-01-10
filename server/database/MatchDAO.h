@@ -25,4 +25,5 @@ public:
     static std::vector<MatchLogItem> getHistoryByUser(int userId);
     static void updateMatchScore(int matchId, int userId, int scoreChange, int rankPos);
     static std::vector<MatchLogItem> getMatchDetails(int matchId, int userId); // THÊM userId Ở ĐÂY
+    static int getRankId(int matchId); // Lấy rank_id để phân biệt loại trận
 };

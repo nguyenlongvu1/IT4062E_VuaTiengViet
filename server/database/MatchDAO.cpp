@@ -230,3 +230,21 @@ bool MatchDAO::deleteHistory(int matchId, int userId) {
     sqlite3_finalize(stmt);
     return success;
 }
+
+int MatchDAO::getRankId(int matchId) {
+    sqlite3* db = DB::getHandle();
+    if (!db) return 0;
+    
+    const char* sql = "SELECT rank_id FROM Match WHERE match_id = ?;";
+    sqlite3_stmt* stmt;
+    int rankId = 0;
+    
+    if (sqlite3_prepare_v2(db, sql, -1, &stmt, nullptr) == SQLITE_OK) {
+        sqlite3_bind_int(stmt, 1, matchId);
+        if (sqlite3_step(stmt) == SQLITE_ROW) {
+            rankId = sqlite3_column_int(stmt, 0);
+        }
+    }
+    sqlite3_finalize(stmt);
+    return rankId;
+}

@@ -22,6 +22,7 @@ struct ActiveGame {
     std::mutex gameMutex; 
 
     int winnerScoreBeforeR3 = 0;
+    int rankId = 1; // 1 = Matchmaking (tính điểm), khác = Phòng bạn (không tính)
 };
 
 static std::map<int, ActiveGame> activeGames;
@@ -101,6 +102,7 @@ Message GameService::startMatch(const Message &msg) {
     newGame.questions = questions;
     newGame.currentQuestionIndex = 0;
     newGame.currentRound = 1;
+    newGame.rankId = MatchDAO::getRankId(matchId); // Lấy rank_id từ DB
 
     for (int p : players) {
         newGame.scores[p] = 0;
@@ -159,8 +161,13 @@ Message GameService::submitAnswer(const Message &msg) {
     int points = 0;
 
     if (isCorrect) {
-        int penalty = std::max(0, timeElapsed - 3);
-        points = std::max(1, 10 - penalty);
+        // Vòng 3: mỗi câu đúng chỉ +1 điểm
+        if (game.currentRound == 3) {
+            points = 1;
+        } else {
+            int penalty = std::max(0, timeElapsed - 3);
+            points = std::max(1, 10 - penalty);
+        }
         game.scores[userId] += points;
     }
     game.answered[userId] = true;
@@ -224,25 +231,30 @@ Message GameService::submitAnswer(const Message &msg) {
         });
 
         int eliminatedId = -1;
+        // CHỈ TÍNH ĐIỂM NẾU LÀ MATCHMAKING (rank_id = 1)
+        bool shouldCountPoints = (game.rankId == 1);
+        
         // Nếu vòng 1 và còn >= 3 người -> Loại người bét (rankList[0])
         if (game.currentRound == 1 && rankList.size() >= 3) {
             eliminatedId = rankList[0].first;
             scoreChange = -20;
-            UserDAO::addPoints(eliminatedId, scoreChange);
             
+            // Chỉ cộng điểm nếu là matchmaking
+            if (shouldCountPoints) {
+                UserDAO::addPoints(eliminatedId, scoreChange);
+            }
             MatchDAO::updateMatchScore(matchId, eliminatedId, scoreChange, (int)rankList.size());
-
-
         }
         // Nếu vòng 2 và còn >= 2 người -> Loại người bét (rankList[0])
         else if (game.currentRound == 2 && rankList.size() >= 2) {
             eliminatedId = rankList[0].first;
             scoreChange = 0; // Điểm biến động
-    
-    UserDAO::addPoints(eliminatedId, scoreChange);
-    
-    // THÊM DÒNG NÀY: Cập nhật MatchPlayers cho người bị loại vòng 2
-    MatchDAO::updateMatchScore(matchId, eliminatedId, scoreChange, (int)rankList.size());
+            
+            // Chỉ cộng điểm nếu là matchmaking
+            if (shouldCountPoints) {
+                UserDAO::addPoints(eliminatedId, scoreChange);
+            }
+            MatchDAO::updateMatchScore(matchId, eliminatedId, scoreChange, (int)rankList.size());
         }
 
         if (eliminatedId != -1) {
@@ -276,13 +288,18 @@ Message GameService::submitAnswer(const Message &msg) {
 
         if (winnerId != -1) {
             // TÍNH ĐIỂM NGƯỜI THẮNG CUỘC
-            // +20 điểm Ranking + (Điểm kiếm được trong vòng 3)
+            // +20 điểm Ranking + (Điểm kiếm được trong vòng 3 - mỗi câu +1)
             int scoreR3 = game.scores[winnerId] - game.winnerScoreBeforeR3;
             int totalReward = 20 + scoreR3;
             
-            UserDAO::addPoints(winnerId, totalReward);
+            // CHỈ CỘNG ĐIỂM NẾU LÀ MATCHMAKING (rank_id = 1)
+            if (game.rankId == 1) {
+                UserDAO::addPoints(winnerId, totalReward);
+                std::cout << "[GAME] Winner User " << winnerId << " (+20 rank + " << scoreR3 << " bonus)\n";
+            } else {
+                std::cout << "[GAME] Winner User " << winnerId << " (Phòng bạn - không tính điểm)\n";
+            }
             MatchDAO::updateMatchScore(matchId, winnerId, totalReward, 1);
-            std::cout << "[GAME] Winner User " << winnerId << " (+20 rank + " << scoreR3 << " bonus)\n";
         }
 
         resp.command = "ANSWER_RESULT";
