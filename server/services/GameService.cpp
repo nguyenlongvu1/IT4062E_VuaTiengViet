@@ -22,7 +22,7 @@ struct ActiveGame {
     std::mutex gameMutex; 
 
     int winnerScoreBeforeR3 = 0;
-    int rankId = 1; // 1 = Matchmaking (tính điểm), khác = Phòng bạn (không tính)
+    bool isRoomMatch = false;           // ← true = Đấu với bạn (không tính điểm)
 };
 
 static std::map<int, ActiveGame> activeGames;
@@ -55,7 +55,7 @@ static std::string normalizeString(const std::string &s) {
 }
 
 // =================================================================================
-// 1. START MATCH
+// 1. START MATCH (Từ Matchmaking hoặc từ Phòng bạn)
 // =================================================================================
 Message GameService::startMatch(const Message &msg) {
     Message resp;
@@ -102,7 +102,19 @@ Message GameService::startMatch(const Message &msg) {
     newGame.questions = questions;
     newGame.currentQuestionIndex = 0;
     newGame.currentRound = 1;
-    newGame.rankId = MatchDAO::getRankId(matchId); // Lấy rank_id từ DB
+    
+    // Kiểm tra nếu từ Phòng bạn (room_id khác 0) hoặc client gửi cờ friend mode
+    newGame.isRoomMatch = false;
+    if (msg.params.count("room_id")) {
+        int roomId = 0;
+        try { roomId = std::stoi(msg.params.at("room_id")); } catch (...) { roomId = 0; }
+        if (roomId > 0) newGame.isRoomMatch = true;  // Phòng bạn -> không tính điểm
+    }
+    if (msg.params.count("match_type")) {
+        std::string mt = msg.params.at("match_type");
+        if (mt == "friend" || mt == "room") newGame.isRoomMatch = true;
+        if (mt == "ranked" || mt == "matchmaking") newGame.isRoomMatch = false;
+    }
 
     for (int p : players) {
         newGame.scores[p] = 0;
@@ -231,17 +243,20 @@ Message GameService::submitAnswer(const Message &msg) {
         });
 
         int eliminatedId = -1;
-        // CHỈ TÍNH ĐIỂM NẾU LÀ MATCHMAKING (rank_id = 1)
-        bool shouldCountPoints = (game.rankId == 1);
+        // CHỈ TÍNH ĐIỂM NẾU LÀ MATCHMAKING (isRoomMatch = false)
+        bool shouldCountPoints = !game.isRoomMatch;
         
         // Nếu vòng 1 và còn >= 3 người -> Loại người bét (rankList[0])
         if (game.currentRound == 1 && rankList.size() >= 3) {
             eliminatedId = rankList[0].first;
             scoreChange = -20;
             
-            // Chỉ cộng điểm nếu là matchmaking
+            // Chỉ cộng điểm nếu là matchmaking (không phải phòng bạn)
             if (shouldCountPoints) {
                 UserDAO::addPoints(eliminatedId, scoreChange);
+                std::cout << "[GAME] Eliminated User " << eliminatedId << " (-20 points, Matchmaking)\n";
+            } else {
+                std::cout << "[GAME] Eliminated User " << eliminatedId << " (Phòng bạn - không tính điểm)\n";
             }
             MatchDAO::updateMatchScore(matchId, eliminatedId, scoreChange, (int)rankList.size());
         }
@@ -258,8 +273,6 @@ Message GameService::submitAnswer(const Message &msg) {
         }
 
         if (eliminatedId != -1) {
-           UserDAO::addPoints(eliminatedId, scoreChange);
-
             // Xóa người chơi khỏi danh sách
             auto it = std::remove(game.players.begin(), game.players.end(), eliminatedId);
             game.players.erase(it, game.players.end());
@@ -292,10 +305,11 @@ Message GameService::submitAnswer(const Message &msg) {
             int scoreR3 = game.scores[winnerId] - game.winnerScoreBeforeR3;
             int totalReward = 20 + scoreR3;
             
-            // CHỈ CỘNG ĐIỂM NẾU LÀ MATCHMAKING (rank_id = 1)
-            if (game.rankId == 1) {
+            // CHỈ CỘNG ĐIỂM NẾU LÀ MATCHMAKING (isRoomMatch = false)
+            // ← Phòng bạn không tính điểm (nhất, nhì, ba đều không cộng)
+            if (!game.isRoomMatch) {
                 UserDAO::addPoints(winnerId, totalReward);
-                std::cout << "[GAME] Winner User " << winnerId << " (+20 rank + " << scoreR3 << " bonus)\n";
+                std::cout << "[GAME] Winner User " << winnerId << " (+20 rank + " << scoreR3 << " bonus) - Matchmaking\n";
             } else {
                 std::cout << "[GAME] Winner User " << winnerId << " (Phòng bạn - không tính điểm)\n";
             }

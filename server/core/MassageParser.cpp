@@ -13,13 +13,15 @@ static inline std::string trim(const std::string &s) {
 
 Message MessageParser::parse(const std::string &s) {
     Message msg;
-    // Detect TLV header: look for COMMAND: and LENGTH:
+    msg.length = 0;  // Default: no length specified
+    
     size_t pos = s.find("COMMAND:");
     if (pos != std::string::npos) {
         // parse lines
         std::istringstream iss(s);
         std::string line;
         std::string body;
+        int expectedLength = -1;
         bool inBody = false;
         while (std::getline(iss, line)) {
             if (line.empty()) { inBody = true; continue; }
@@ -28,13 +30,28 @@ Message MessageParser::parse(const std::string &s) {
                 if (p != std::string::npos) {
                     std::string key = trim(line.substr(0, p));
                     std::string value = trim(line.substr(p+1));
-                    if (key == "COMMAND") msg.command = value;
-                    // ignore LENGTH for now
+                    if (key == "COMMAND") {
+                        msg.command = value;
+                    } else if (key == "LENGTH") {
+                        try {
+                            expectedLength = std::stoi(value);
+                            msg.length = expectedLength;  // Store LENGTH in struct
+                        } catch (...) {
+                            expectedLength = -1;
+                            msg.length = 0;
+                        }
+                    }
                 }
             } else {
                 if (!body.empty()) body += "\n";
                 body += line;
             }
+        }
+        
+        // Validate payload length if LENGTH was specified
+        if (expectedLength >= 0 && static_cast<int>(body.size()) != expectedLength) {
+        
+            msg.length = static_cast<int>(body.size());  // Update with actual size
         }
         // Try TLV body: token format "tag|len|value" separated by ';'
         bool parsedTLV = false;
@@ -105,9 +122,10 @@ Message MessageParser::parse(const std::string &s) {
 }
 
 std::string MessageParser::build(const Message &msg) {
-    // Build body in pseudo-TLV: key|len|value;...
+    // Build body in TLV format: key|len|value;...
     std::ostringstream oss;
     oss << "COMMAND: " << msg.command << "\n";
+    
     std::ostringstream body;
     bool first = true;
     for (auto &kv : msg.params) {
@@ -115,9 +133,14 @@ std::string MessageParser::build(const Message &msg) {
         first = false;
         body << kv.first << "|" << kv.second.size() << "|" << kv.second;
     }
+    
     std::string bodyStr = body.str();
-    oss << "LENGTH: " << bodyStr.size() << "\n\n";
+    int payloadSize = static_cast<int>(bodyStr.size());
+    
+    // Write LENGTH header with actual payload size
+    oss << "LENGTH: " << payloadSize << "\n\n";
     oss << bodyStr;
+    
     return oss.str();
 }
 
